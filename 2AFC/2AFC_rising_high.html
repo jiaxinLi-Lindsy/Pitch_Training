@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PLOYU-Peng's Lab: Temporal Resolution Training</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f8f8f8;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            width: 100%;
+        }
+        .training-info {
+            font-size: 16px;
+            color: #555;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            width: 100%;
+        }
+        .prompt-text {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 25px;
+            margin-top: 30px;
+            font-weight: bold;
+        }
+        .response-button {
+            width: 160px;
+            height: 160px;
+            font-size: 26px;
+            margin: 0 40px;
+            border-radius: 15px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+        .response-button:hover:enabled {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .response-button:active:enabled {
+            transform: translateY(1px);
+        }
+        .control-button-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+            width: 100%;
+        }
+        .control-button {
+            padding: 14px 28px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+        .control-button:hover:enabled {
+            background-color: #3e8e41;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .control-button:active:enabled {
+            transform: translateY(1px);
+        }
+        .control-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .feedback {
+            text-align: center;
+            height: 100px;
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .status {
+            width: 350px;
+            height: 68px;
+            text-align: center;
+            font-size: 18px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .debug-info {
+            font-size: 12px;
+            color: #777;
+            margin-top: 30px;
+            text-align: left;
+            display: none; /* Hide by default */
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            width: 100%;
+        }
+        /* Results container styles */
+        .results-container {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+        }
+        .result-heading {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .result-table th, .result-table td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .result-table th {
+            background-color: #3498db;
+            color: white;
+        }
+        .result-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .result-interpretation {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .back-button {
+            display: block;
+            margin: 0 auto;
+            padding: 14px 28px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+        }
+        .back-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .back-button:active {
+            transform: translateY(1px);
+        }
+        .same-different-buttons .response-button:first-child {
+            background-color: #4b6cb7;
+            color: white;
+        }
+        .same-different-buttons .response-button:last-child {
+            background-color: #f08080;
+            color: white;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #4CAF50;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        .staircase-chart {
+            width: 100%;
+            height: 300px;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="Media/animation.gif" alt="Experiment animation">
+            <div class="training-info">High Rising 2AFC Task - Same/Different Judgement (Adaptive Method)</div>
+        </div>
+        
+        <div id="experimentContainer">
+            <div class="control-button-container">
+                <input id="start" type="button" value="Start Test" class="control-button">
+                <input id="resetButton" type="button" value="Reset" class="control-button" style="background-color: #ff6b6b;">
+                <input id="viewResult" type="button" value="Results" class="control-button" style="background-color: #5b92e5;" disabled>
+                <input id="exportCSV" type="button" value="Export CSV" class="control-button" style="background-color: #f39c12;" disabled>
+            </div>
+            
+            <div class="prompt-text" id="promptText">
+                The sounds are...
+            </div>
+            
+            <div class="button-container same-different-buttons">
+                <input id="sameButton" type="button" value="Same" disabled 
+                    class="response-button">
+                <input id="differentButton" type="button" value="Different" disabled 
+                    class="response-button">
+            </div>
+            
+            <div class="feedback">
+                <img id="smile" src="Media/null.gif" width="100" height="84" alt="Feedback">
+            </div>
+            
+            <div class="button-container">
+                <input id="text1" class="status" readonly>
+            </div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            
+            <div class="debug-info" id="debugInfo">
+                Debug information will be displayed here
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <label><input type="checkbox" id="showDebug"> Show Debug Info</label>
+                <button id="testAudioBtn">Test Audio</button>
+            </div>
+        </div>
+        
+        <!-- Embedded Results Display Area -->
+        <div id="resultsContainer" class="results-container">
+            <h2 class="result-heading">Temporal Resolution Test Results</h2>
+            
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th>Measure</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody id="resultTableBody">
+                    <!-- Results will be populated by JavaScript -->
+                </tbody>
+            </table>
+            
+            <div class="result-interpretation" id="resultInterpretation">
+                <!-- Interpretation will be populated by JavaScript -->
+            </div>
+            
+            <div class="staircase-chart" id="staircaseChart">
+                <!-- 自适应阶梯图将在这里显示 -->
+            </div>
+            
+            <div class="button-container" style="margin-top: 20px;">
+                <button class="control-button" id="printResultsBtn" style="background-color: #9b59b6;">Print Results</button>
+                <button class="back-button" id="backButton">Back to Experiment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 高升调音频文件 - 修正为Media文件夹内 -->
+    <audio id="high_rising_standard" src="Media/high_rising_standard.wav" preload="auto"></audio>
+    <audio id="high_rising_1" src="Media/high_rising_1.wav" preload="auto"></audio>
+    <audio id="high_rising_2" src="Media/high_rising_2.wav" preload="auto"></audio>
+    <audio id="high_rising_3" src="Media/high_rising_3.wav" preload="auto"></audio>
+    <audio id="high_rising_4" src="Media/high_rising_4.wav" preload="auto"></audio>
+    <audio id="high_rising_5" src="Media/high_rising_5.wav" preload="auto"></audio>
+    <audio id="high_rising_6" src="Media/high_rising_6.wav" preload="auto"></audio>
+    <audio id="high_rising_7" src="Media/high_rising_7.wav" preload="auto"></audio>
+    <audio id="high_rising_8" src="Media/high_rising_8.wav" preload="auto"></audio>
+    <audio id="high_rising_9" src="Media/high_rising_9.wav" preload="auto"></audio>
+
+<script>
+// 全局变量
+const MAX_TRIALS = 70;      // 最大试验次数上限 - 修改为70
+let currentTrial = 0;      // 当前试验计数
+let correctResponses = 0;  // 正确回答计数
+let totalResponseTime = 0; // 总响应时间
+let stimulusEndTime = 0;   // 刺激结束时间，用于计算反应时间
+let trialStartTime;        // 试验开始时间
+let testStarted = false;   // 测试是否已开始
+
+// 信号检测理论相关变量
+let hits = 0;              // 正确检测到"不同"
+let falseAlarms = 0;       // 错误地判断为"不同"
+let misses = 0;            // 未检测到"不同"
+let correctRejections = 0; // 正确地判断为"相同"
+
+// 当前试验的正确答案
+let correctAnswer = '';    // 'same' 或 'different'
+
+// 音频解锁状态
+let audioUnlocked = false;
+
+// 记录试验数据
+let trialRecords = [];
+
+// 自适应阶梯相关变量
+let currentDifficultyLevel = 5;  // 起始难度级别（中等）
+let difficultyLevels = [1, 2, 3, 4, 5, 6, 7, 8, 9]; // 难度级别数组
+const MIN_DIFFICULTY = 1;
+const MAX_DIFFICULTY = 9;
+
+// 自适应算法参数 - 修改为与level组一致的逻辑
+let reversalPoints = [];   // 反转点数组
+let reversalDirections = []; // 记录每个反转点的方向
+let lastDirection = 0;     // 上一次调整的方向（1: 增加难度, -1: 减少难度, 0: 初始状态）
+const MAX_REVERSALS = 12;  // 最大转折点数量 - 修改为12
+const REVERSALS_TO_AVERAGE = 8; // 用于计算阈值的转折点数量 - 保持8个
+let consecutiveCorrect = 0;
+let consecutiveWrong = 0;
+
+// 标准刺激的窗长
+const STANDARD_WINDOW_LENGTH = 400; // ms
+
+// 比较刺激的窗长百分比 - 基于实际刺激音设计
+// 每个难度级别对应的窗长百分比（从简单到难）
+const WINDOW_PERCENTAGES = [20, 40, 50, 60, 70, 80, 90, 95, 98];
+
+// 自适应阶梯参数记录
+let adaptiveHistory = [];
+
+// 简单日志记录函数，输出到控制台和调试区域
+function logDebug(message) {
+    console.log(message);
+    var debugArea = document.getElementById('debugInfo');
+    var now = new Date();
+    var timeStr = now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds() + '.' + now.getMilliseconds();
+    debugArea.innerHTML += '<p>[' + timeStr + '] ' + message + '</p>';
+    
+    // 保持滚动到底部
+    debugArea.scrollTop = debugArea.scrollHeight;
+}
+
+// 显示/隐藏调试信息
+function toggleDebug() {
+    var debugArea = document.getElementById('debugInfo');
+    var checkbox = document.getElementById('showDebug');
+    debugArea.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+// 测试所有音频文件
+function testAudio() {
+    logDebug("开始测试所有音频文件...");
+    var audios = document.querySelectorAll('audio');
+    
+    // 解锁音频上下文
+    if (!audioUnlocked) {
+        unlockAudioContext();
+    }
+    
+    var index = 0;
+    function playNext() {
+        if (index >= audios.length) {
+            logDebug("所有音频测试完成!");
+            return;
+        }
+        
+        var audio = audios[index];
+        logDebug("测试音频 #" + (index + 1) + ": " + audio.id);
+        
+        // 重置并播放
+        audio.currentTime = 0;
+        
+        // 使用promise处理播放
+        var playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(function() {
+                logDebug(audio.id + " 播放成功");
+                
+                // 设置结束事件播放下一个
+                audio.onended = function() {
+                    logDebug(audio.id + " 播放结束");
+                    index++;
+                    setTimeout(playNext, 500);
+                };
+            }).catch(function(error) {
+                logDebug("播放 " + audio.id + " 失败: " + error);
+                index++;
+                setTimeout(playNext, 500);
+            });
+        }
+    }
+    
+    playNext();
+}
+
+// 解锁音频上下文
+function unlockAudioContext() {
+    logDebug("尝试解锁音频上下文...");
+    
+    // 创建短暂的静音音频
+    var silentAudio = new Audio();
+    silentAudio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+    
+    // 尝试播放静音音频
+    var promise = silentAudio.play();
+    if (promise !== undefined) {
+        promise.then(function() {
+            logDebug("音频上下文成功解锁");
+            silentAudio.remove();
+            audioUnlocked = true;
+        }).catch(function(error) {
+            logDebug("无法解锁音频上下文: " + error);
+        });
+    }
+    
+    // 预加载所有音频
+    var allAudios = document.querySelectorAll('audio');
+    for (var i = 0; i < allAudios.length; i++) {
+        var audio = allAudios[i];
+        audio.load();
+    }
+    
+    logDebug("预加载了 " + allAudios.length + " 个音频文件");
+}
+
+// 计算当前难度级别对应的调制窗长参数
+// 修正后的参数映射函数，基于实际刺激音的窗长百分比
+function getDifficultyParams(level) {
+    if (level < 1) level = 1;
+    if (level > 9) level = 9;
+    
+    // 获取当前难度级别对应的百分比
+    const percentage = WINDOW_PERCENTAGES[level - 1]; // 索引从0开始
+    
+    // 计算实际时间窗口(ms)
+    const timeWindow = (STANDARD_WINDOW_LENGTH * percentage) / 100;
+    
+    // 计算对应的调制速率(Hz) - 使用1000/窗长作为近似
+    const modRate = 1000 / timeWindow;
+    
+    return { modRate, timeWindow, percentage };
+}
+
+// 更新难度级别（自适应算法核心）- 修改为与level组一致的逻辑
+function updateDifficultyLevel(isCorrect) {
+    const { modRate, timeWindow, percentage } = getDifficultyParams(currentDifficultyLevel);
+    logDebug(`当前难度级别: ${currentDifficultyLevel}, 窗长百分比: ${percentage}%, 窗长: ${timeWindow.toFixed(1)}ms, 回答正确: ${isCorrect}`);
+    
+    let newDirection = 0;
+    
+    if (isCorrect) {
+        // 回答正确，记录连续正确次数
+        consecutiveCorrect++;
+        consecutiveWrong = 0;
+        
+        // 连续两次正确增加难度
+        if (consecutiveCorrect >= 2) {
+            if (currentDifficultyLevel < MAX_DIFFICULTY) {
+                currentDifficultyLevel++;
+                newDirection = 1;
+                const newParams = getDifficultyParams(currentDifficultyLevel);
+                logDebug(`难度增加至级别 ${currentDifficultyLevel} (窗长百分比: ${newParams.percentage}%, 窗长: ${newParams.timeWindow.toFixed(1)}ms)`);
+            } else {
+                logDebug("已达到最高难度，难度保持不变");
+            }
+            consecutiveCorrect = 0; // 重置连续正确计数
+        }
+    } else {
+        // 回答错误，立即减少难度
+        consecutiveWrong++;
+        consecutiveCorrect = 0;
+        
+        // 单次错误就减少难度
+        if (currentDifficultyLevel > MIN_DIFFICULTY) {
+            currentDifficultyLevel--;
+            newDirection = -1;
+            const newParams = getDifficultyParams(currentDifficultyLevel);
+            logDebug(`难度降低至级别 ${currentDifficultyLevel} (窗长百分比: ${newParams.percentage}%, 窗长: ${newParams.timeWindow.toFixed(1)}ms)`);
+        } else {
+            logDebug("已达到最低难度，难度保持不变");
+        }
+        consecutiveWrong = 0; // 重置连续错误计数
+    }
+    
+    // 检查是否发生反转 - 修改为仅在方向变化时记录转折点
+    if (lastDirection !== 0 && newDirection !== 0 && newDirection !== lastDirection) {
+        logDebug(`检测到反转点: 从${lastDirection > 0 ? '增加' : '减少'}变为${newDirection > 0 ? '增加' : '减少'}`);
+        
+        const { modRate, timeWindow, percentage } = getDifficultyParams(currentDifficultyLevel);
+        reversalPoints.push({ 
+            trial: currentTrial, 
+            difficultyLevel: currentDifficultyLevel,
+            modRate: modRate,
+            timeWindow: timeWindow,
+            percentage: percentage
+        });
+        reversalDirections.push(newDirection);
+        
+        logDebug(`记录反转点: #${reversalPoints.length}, 难度级别=${currentDifficultyLevel}, 窗长百分比=${percentage}%, 窗长=${timeWindow.toFixed(1)}ms, 调制率=${modRate.toFixed(2)}Hz`);
+    }
+    
+    // 更新方向
+    if (newDirection !== 0) {
+        lastDirection = newDirection;
+    }
+    
+    // 记录适应性历史
+    const params = getDifficultyParams(currentDifficultyLevel);
+    adaptiveHistory.push({
+        trial: currentTrial,
+        difficultyLevel: currentDifficultyLevel,
+        modRate: params.modRate,
+        timeWindow: params.timeWindow,
+        percentage: params.percentage,
+        isCorrect: isCorrect
+    });
+    
+    logDebug(`当前适应性阶梯状态: 难度级别=${currentDifficultyLevel}, 窗长百分比=${params.percentage}%, 窗长=${params.timeWindow.toFixed(1)}ms, 调制率=${params.modRate.toFixed(2)}Hz`);
+}
+
+// 检查是否应该结束测试 - 修改为使用MAX_REVERSALS和MAX_TRIALS
+function shouldEndTest() {
+    // 如果已经收集了足够数量的反转点，或者已经达到最大试验次数，则结束测试
+    return reversalPoints.length >= MAX_REVERSALS || currentTrial >= MAX_TRIALS;
+}
+
+// 播放音频序列
+function playAudioSequence() {
+    logDebug("开始播放音频序列");
+    
+    document.getElementById('start').disabled = true;
+    document.getElementById('resetButton').disabled = true;
+    document.getElementById('sameButton').disabled = true;
+    document.getElementById('differentButton').disabled = true;
+    document.getElementById('promptText').style.visibility = 'hidden';
+    
+    document.getElementById('text1').value = "Listen to the first sound";
+    
+    // 决定是same还是different试次 (在自适应中保持约50%的几率)
+    correctAnswer = Math.random() > 0.5 ? 'same' : 'different';
+    logDebug("试次类型: " + correctAnswer);
+    
+    // 获取标准刺激音
+    var standardAudio = document.getElementById('high_rising_standard');
+    
+    // 检查音频是否存在
+    if (!standardAudio) {
+        logDebug("错误：找不到标准刺激音 'high_rising_standard'");
+        document.getElementById('text1').value = "Error: Cannot find audio file";
+        document.getElementById('start').disabled = false;
+        document.getElementById('resetButton').disabled = false;
+        return;
+    }
+    
+    // 重置音频
+    standardAudio.currentTime = 0;
+    
+    // 播放第一个音频 (标准音)
+    var playPromise = standardAudio.play();
+    
+    if (playPromise !== undefined) {
+        playPromise.then(function() {
+            logDebug("标准音成功播放");
+            
+            // 第一个音频播放完成后的回调
+            standardAudio.onended = function() {
+                logDebug("标准音播放结束，准备播放第二个音频");
+                
+                // 标准音结束后显示消息
+                document.getElementById('text1').value = "Listen to the second sound";
+                
+                // 延迟一秒后播放第二个音频
+                setTimeout(function() {
+                    // 准备播放第二个音频
+                    if (correctAnswer === 'same') {
+                        // 相同试次 - 再次播放标准音
+                        standardAudio.currentTime = 0;
+                        logDebug("播放第二个音频 (标准音 - Same trial)");
+                        
+                        standardAudio.play().then(function() {
+                            standardAudio.onended = function() {
+                                logDebug("第二个音频播放结束");
+                                showResponseButtons();
+                            };
+                        }).catch(function(error) {
+                            logDebug("无法播放第二个音频: " + error);
+                            document.getElementById('text1').value = "音频播放错误，请刷新页面";
+                            document.getElementById('start').disabled = false;
+                            document.getElementById('resetButton').disabled = false;
+                        });
+                    } else {
+                        // 不同试次 - 播放当前难度级别的刺激音
+                        const stimulusNumber = currentDifficultyLevel; // 使用当前难度级别
+                        const stimulusAudio = document.getElementById('high_rising_' + stimulusNumber);
+                        
+                        // 检查音频是否存在
+                        if (!stimulusAudio) {
+                            logDebug("错误：找不到刺激音 'high_rising_" + stimulusNumber + "'");
+                            document.getElementById('text1').value = "Error: Cannot find audio file";
+                            document.getElementById('start').disabled = false;
+                            document.getElementById('resetButton').disabled = false;
+                            return;
+                        }
+                        
+                        // 获取当前难度级别对应的参数
+                        const { modRate, timeWindow, percentage } = getDifficultyParams(stimulusNumber);
+                        
+                        logDebug(`使用参数：难度级别=${stimulusNumber}, 窗长百分比=${percentage}%, 窗长=${timeWindow.toFixed(1)}ms, 调制率=${modRate.toFixed(2)}Hz`);
+                        
+                        // 重置音频
+                        stimulusAudio.currentTime = 0;
+                        
+                        logDebug("播放第二个音频 (刺激音 " + stimulusNumber + " - Different trial)");
+                        
+                        stimulusAudio.play().then(function() {
+                            stimulusAudio.onended = function() {
+                                logDebug("第二个音频播放结束");
+                                showResponseButtons();
+                            };
+                        }).catch(function(error) {
+                            logDebug("无法播放第二个音频: " + error);
+                            document.getElementById('text1').value = "音频播放错误，请刷新页面";
+                            document.getElementById('start').disabled = false;
+                            document.getElementById('resetButton').disabled = false;
+                        });
+                    }
+                }, 1000); // 两个刺激之间的间隔
+            };
+        }).catch(function(error) {
+            logDebug("无法播放标准音: " + error);
+            document.getElementById('text1').value = "音频播放错误，请刷新页面";
+            document.getElementById('start').disabled = false;
+            document.getElementById('resetButton').disabled = false;
+        });
+    }
+}
+
+// 显示响应按钮
+function showResponseButtons() {
+    document.getElementById('text1').value = "Were the sounds the same or different?";
+    document.getElementById('promptText').style.visibility = 'visible';
+    
+    document.getElementById('sameButton').disabled = false;
+    document.getElementById('differentButton').disabled = false;
+    
+    // 设置按钮样式
+    document.getElementById('sameButton').style.backgroundColor = "#4b6cb7";
+    document.getElementById('differentButton').style.backgroundColor = "#f08080";
+    
+    // 记录刺激结束时间，用于计算反应时间
+    stimulusEndTime = performance.now();
+    
+    logDebug("试次准备完成，等待用户响应");
+}
+
+// 处理答案
+function processAnswer(response) {
+    // 计算反应时间
+    const reactionEndTime = performance.now();
+    const reactionTime = reactionEndTime - stimulusEndTime;
+    
+    logDebug("用户回答: " + response + ", 正确答案: " + correctAnswer + ", 反应时间: " + reactionTime.toFixed(0) + "ms");
+    
+    document.getElementById('sameButton').disabled = true;
+    document.getElementById('differentButton').disabled = true;
+    document.getElementById('promptText').style.visibility = 'hidden';
+    
+    const isCorrect = (response === correctAnswer);
+    
+    // 新增：记录本次试验的详细数据
+    const { modRate, timeWindow, percentage } = getDifficultyParams(currentDifficultyLevel);
+    const trialInfo = {
+        trialNumber: currentTrial + 1,
+        timestamp: new Date().toISOString(),
+        userResponse: response,
+        correctResponse: correctAnswer,
+        isCorrect: isCorrect,
+        reactionTime: reactionTime.toFixed(0),
+        difficultyLevel: currentDifficultyLevel,
+        modRate: modRate,
+        timeWindow: timeWindow,
+        percentage: percentage
+    };
+    
+    // 添加到试验记录数组
+    trialRecords.push(trialInfo);
+    
+    // 根据答案更新信号检测变量
+    if (isCorrect) { // 正确答案
+        logDebug("回答正确");
+        document.getElementById('smile').src = "Media/smiley.png";
+        document.getElementById('text1').value = "Correct!";
+        correctResponses++;
+        
+        if (response === 'same') {
+            correctRejections++;
+        } else {
+            hits++;
+        }
+    } else { // 错误答案
+        logDebug("回答错误");
+        document.getElementById('smile').src = "Media/nosmiley.png";
+        document.getElementById('text1').value = "Incorrect!";
+        
+        if (response === 'same') {
+            misses++;
+        } else {
+            falseAlarms++;
+        }
+    }
+    
+    totalResponseTime += reactionTime / 1000; // 转换为秒
+    currentTrial++;
+    updateProgressBar();
+    
+    // 根据答案调整难度级别（自适应算法的核心）
+    updateDifficultyLevel(isCorrect);
+    
+    // 检查是否应该结束测试
+    if (shouldEndTest()) {
+        setTimeout(function() {
+            document.getElementById('smile').src = "Media/null.gif";
+            document.getElementById('text1').value = "Test complete! Click 'Results' to see your results.";
+            updateButtonsAfterTest(); // 使用新函数启用所有按钮
+            logDebug("测试全部完成");
+        }, 1500);
+    } else {
+        // 延迟后自动开始下一个试验
+        setTimeout(function() {
+            document.getElementById('smile').src = "Media/null.gif";
+            logDebug("自动开始下一个试验");
+            document.getElementById('text1').value = "Preparing next trial...";
+            // 自动开始下一个试验
+            setTimeout(function() {
+                playAudioSequence();
+            }, 500);
+        }, 1500);
+    }
+}
+
+// 更新实验完成后的按钮状态
+function updateButtonsAfterTest() {
+    document.getElementById('exportCSV').disabled = false;
+    document.getElementById('viewResult').disabled = false;
+    document.getElementById('resetButton').disabled = false;
+}
+
+// 更新进度条 - 修改为使用MAX_REVERSALS
+function updateProgressBar() {
+    const progressBar = document.getElementById('progressBar');
+    if (progressBar) {
+        // 在自适应模式中，进度基于收集的反转点数量
+        const progressPercent = Math.min((reversalPoints.length / MAX_REVERSALS) * 100, 100);
+        progressBar.style.width = `${progressPercent}%`;
+    }
+}
+
+// 计算标准差
+function calculateStandardDeviation(values) {
+    if (values.length <= 1) {
+        return 0;
+    }
+    
+    const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+    const squareDiffs = values.map(value => Math.pow(value - avg, 2));
+    const avgSquareDiff = squareDiffs.reduce((sum, val) => sum + val, 0) / squareDiffs.length;
+    return Math.sqrt(avgSquareDiff);
+}
+
+// 正态分布Z分数计算辅助函数
+function NormalizeZ(p) {
+    const a1 = -39.6968302866538, a2 = 220.946098424521, a3 = -275.928510446969;
+    const a4 = 138.357751867269, a5 = -30.6647980661472, a6 = 2.50662827745924;
+    const b1 = -54.4760987982241, b2 = 161.585836858041, b3 = -155.698979859887;
+    const b4 = 66.8013118877197, b5 = -13.2806815528857, c1 = -7.78489400243029E-03;
+    const c2 = -0.322396458041136, c3 = -2.40075827716184, c4 = -2.54973253934373;
+    const c5 = 4.37466414146497, c6 = 2.93816398269878, d1 = 7.78469570904146E-03;
+    const d2 = 0.32246712907004, d3 = 2.445134137143, d4 = 3.75440866190742;
+    const p_low = 0.02425, p_high = 1 - p_low;
+    let z, q, r;
+    
+    if(p < p_low) {
+        q = Math.sqrt(-2 * Math.log(p));
+        z = ((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6;
+        z = z / ((((d1 * q + d2) * q + d3) * q + d4) * q + 1);
+    } else if(p > p_high) {
+        q = Math.sqrt(-2 * Math.log(1 - p));
+        z = -((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6;
+        z = z / ((((d1 * q + d2) * q + d3) * q + d4) * q + 1);
+    } else {
+        q = p - 0.5;
+        r = q * q;
+        z = (((((a1 * r + a2) * r + a3) * r + a4) * r + a5) * r + a6) * q;
+        z = z / (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1);
+    }
+    return z;
+}
+
+// 绘制自适应阶梯图
+function drawStaircaseChart() {
+    const chartContainer = document.getElementById('staircaseChart');
+    if (!chartContainer) return;
+    
+    // 清空容器
+    chartContainer.innerHTML = '';
+    
+    // 创建一个SVG元素
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", "100%");
+    svg.setAttribute("viewBox", "0 0 800 400");
+    
+    // 设置边距
+    const margin = { top: 30, right: 50, bottom: 50, left: 60 };
+    const width = 800 - margin.left - margin.right;
+    const height = 400 - margin.top - margin.bottom;
+    
+    // 创建主绘图组
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("transform", `translate(${margin.left},${margin.top})`);
+    
+    // 添加标题
+    const title = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    title.setAttribute("x", width / 2);
+    title.setAttribute("y", -10);
+    title.setAttribute("text-anchor", "middle");
+    title.setAttribute("font-size", "16px");
+    title.textContent = "Adaptive Staircase Progression";
+    g.appendChild(title);
+    
+    // 计算X和Y尺度
+    const xMax = Math.max(MAX_TRIALS, adaptiveHistory.length);
+    const xScale = width / xMax;
+    const yScale = height / (MAX_DIFFICULTY - MIN_DIFFICULTY + 1);
+    
+    // 绘制坐标轴
+    // X轴
+    const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    xAxis.setAttribute("x1", 0);
+    xAxis.setAttribute("y1", height);
+    xAxis.setAttribute("x2", width);
+    xAxis.setAttribute("y2", height);
+    xAxis.setAttribute("stroke", "black");
+    xAxis.setAttribute("stroke-width", "1");
+    g.appendChild(xAxis);
+    
+    // X轴标签
+    const xLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    xLabel.setAttribute("x", width / 2);
+    xLabel.setAttribute("y", height + 40);
+    xLabel.setAttribute("text-anchor", "middle");
+    xLabel.setAttribute("font-size", "14px");
+    xLabel.textContent = "Trial Number";
+    g.appendChild(xLabel);
+    
+    // Y轴
+    const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    yAxis.setAttribute("x1", 0);
+    yAxis.setAttribute("y1", 0);
+    yAxis.setAttribute("x2", 0);
+    yAxis.setAttribute("y2", height);
+    yAxis.setAttribute("stroke", "black");
+    yAxis.setAttribute("stroke-width", "1");
+    g.appendChild(yAxis);
+    
+    // Y轴标签
+    const yLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    yLabel.setAttribute("x", -height / 2);
+    yLabel.setAttribute("y", -40);
+    yLabel.setAttribute("text-anchor", "middle");
+    yLabel.setAttribute("transform", "rotate(-90)");
+    yLabel.setAttribute("font-size", "14px");
+    yLabel.textContent = "Difficulty Level";
+    g.appendChild(yLabel);
+    
+    // Y轴刻度
+    for (let i = MIN_DIFFICULTY; i <= MAX_DIFFICULTY; i++) {
+        const y = height - (i - MIN_DIFFICULTY) * yScale;
+        
+        // 刻度线
+        const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        tick.setAttribute("x1", -5);
+        tick.setAttribute("y1", y);
+        tick.setAttribute("x2", 0);
+        tick.setAttribute("y2", y);
+        tick.setAttribute("stroke", "black");
+        tick.setAttribute("stroke-width", "1");
+        g.appendChild(tick);
+        
+        // 刻度值
+        const tickLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        tickLabel.setAttribute("x", -10);
+        tickLabel.setAttribute("y", y + 5);
+        tickLabel.setAttribute("text-anchor", "end");
+        tickLabel.setAttribute("font-size", "12px");
+        tickLabel.textContent = i;
+        g.appendChild(tickLabel);
+    }
+    
+    // 辅助网格线
+    for (let i = MIN_DIFFICULTY; i <= MAX_DIFFICULTY; i++) {
+        const y = height - (i - MIN_DIFFICULTY) * yScale;
+        
+        const gridLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        gridLine.setAttribute("x1", 0);
+        gridLine.setAttribute("y1", y);
+        gridLine.setAttribute("x2", width);
+        gridLine.setAttribute("y2", y);
+        gridLine.setAttribute("stroke", "#e0e0e0");
+        gridLine.setAttribute("stroke-width", "1");
+        g.appendChild(gridLine);
+    }
+    
+    // 绘制自适应阶梯路径
+    if (adaptiveHistory.length > 0) {
+        // 创建路径元素
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", "blue");
+        path.setAttribute("stroke-width", "2");
+        
+        let d = `M 0 ${height - (adaptiveHistory[0].difficultyLevel - MIN_DIFFICULTY) * yScale}`;
+        
+        for (let i = 1; i < adaptiveHistory.length; i++) {
+            const x = i * xScale;
+            const y = height - (adaptiveHistory[i].difficultyLevel - MIN_DIFFICULTY) * yScale;
+            d += ` L ${x} ${y}`;
+        }
+        
+        path.setAttribute("d", d);
+        g.appendChild(path);
+        
+        // 绘制数据点
+        for (let i = 0; i < adaptiveHistory.length; i++) {
+            const x = i * xScale;
+            const y = height - (adaptiveHistory[i].difficultyLevel - MIN_DIFFICULTY) * yScale;
+            
+            const point = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            point.setAttribute("cx", x);
+            point.setAttribute("cy", y);
+            point.setAttribute("r", 4);
+            point.setAttribute("fill", adaptiveHistory[i].isCorrect ? "green" : "red");
+            
+            // 添加悬停提示
+            const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+            title.textContent = `Trial: ${adaptiveHistory[i].trial + 1}
+Level: ${adaptiveHistory[i].difficultyLevel}
+Response: ${adaptiveHistory[i].isCorrect ? "Correct" : "Incorrect"}
+Window %: ${adaptiveHistory[i].percentage}%
+Window: ${adaptiveHistory[i].timeWindow.toFixed(1)} ms
+Mod Rate: ${adaptiveHistory[i].modRate.toFixed(2)} Hz`;
+            point.appendChild(title);
+            
+            g.appendChild(point);
+        }
+        
+        // 标记反转点
+        for (let i = 0; i < reversalPoints.length; i++) {
+            const rp = reversalPoints[i];
+            const x = rp.trial * xScale;
+            const y = height - (rp.difficultyLevel - MIN_DIFFICULTY) * yScale;
+            
+            const reversalMark = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            reversalMark.setAttribute("cx", x);
+            reversalMark.setAttribute("cy", y);
+            reversalMark.setAttribute("r", 6);
+            reversalMark.setAttribute("fill", "none");
+            reversalMark.setAttribute("stroke", "purple");
+            reversalMark.setAttribute("stroke-width", "2");
+            
+            // 添加悬停提示
+            const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+            title.textContent = `Reversal #${i + 1}
+Trial: ${rp.trial + 1}
+Level: ${rp.difficultyLevel}
+Direction: ${reversalDirections[i] > 0 ? "Up" : "Down"}
+Window %: ${rp.percentage}%
+Window: ${rp.timeWindow.toFixed(1)} ms
+Mod Rate: ${rp.modRate.toFixed(2)} Hz`;
+            reversalMark.appendChild(title);
+            
+            g.appendChild(reversalMark);
+        }
+    }
+    
+    svg.appendChild(g);
+    chartContainer.appendChild(svg);
+}
+
+// 计算结果 - 修改为使用最后8个转折点
+function calculateResults() {
+    logDebug("计算结果开始");
+    
+    // 计算准确率
+    const accuracy = correctResponses / currentTrial;
+    
+    // 计算平均响应时间
+    const avgResponseTime = totalResponseTime / currentTrial;
+    
+    // 计算信号检测理论指标
+    let dprime = 0;
+    let beta = 0;
+    
+    // 计算hits和false alarms的比率
+    const hitRate = hits / (hits + misses) || 0;
+    const faRate = falseAlarms / (falseAlarms + correctRejections) || 0;
+    
+    // 将0和1调整为接近值以避免无限
+    const adjustedHitRate = hitRate === 0 ? 0.01 : (hitRate === 1 ? 0.99 : hitRate);
+    const adjustedFaRate = faRate === 0 ? 0.01 : (faRate === 1 ? 0.99 : faRate);
+    
+    logDebug(`命中率: ${hitRate.toFixed(2)}, 误报率: ${faRate.toFixed(2)}`);
+    
+    // 计算z分数
+    const zHit = NormalizeZ(adjustedHitRate);
+    const zFa = NormalizeZ(adjustedFaRate);
+    
+    // 计算d'和β
+    dprime = zHit - zFa;
+    beta = Math.exp((zFa * zFa - zHit * zHit) / 2);
+    
+    // 从最后几个反转点计算阈值（自适应方法特有）
+    let modRateThreshold = 0;
+    let modRateSD = 0;
+    let timeWindowThreshold = 0;
+    let timeWindowSD = 0;
+    let percentageThreshold = 0;
+    let percentageSD = 0;
+    
+    // 修改为使用最后8个反转点计算阈值
+    if (reversalPoints.length >= REVERSALS_TO_AVERAGE) {
+        // 使用最后8个反转点计算阈值
+        const lastReversals = reversalPoints.slice(-REVERSALS_TO_AVERAGE);
+        
+        // 提取调制速率、时间窗口和百分比值
+        const modRates = lastReversals.map(r => r.modRate);
+        const timeWindows = lastReversals.map(r => r.timeWindow);
+        const percentages = lastReversals.map(r => r.percentage);
+        
+        // 计算调制速率阈值（平均值）和标准差
+        modRateThreshold = modRates.reduce((sum, val) => sum + val, 0) / modRates.length;
+        modRateSD = calculateStandardDeviation(modRates);
+        
+        // 计算时间窗长阈值（平均值）和标准差
+        timeWindowThreshold = timeWindows.reduce((sum, val) => sum + val, 0) / timeWindows.length;
+        timeWindowSD = calculateStandardDeviation(timeWindows);
+        
+        // 计算百分比阈值（平均值）和标准差
+        percentageThreshold = percentages.reduce((sum, val) => sum + val, 0) / percentages.length;
+        percentageSD = calculateStandardDeviation(percentages);
+        
+        logDebug(`从最后${REVERSALS_TO_AVERAGE}个反转点计算:`);
+        logDebug(`窗长百分比阈值: ${percentageThreshold.toFixed(2)}%, 标准差: ${percentageSD.toFixed(2)}%`);
+        logDebug(`时间窗口阈值: ${timeWindowThreshold.toFixed(2)}ms, 标准差: ${timeWindowSD.toFixed(2)}ms`);
+        logDebug(`调制速率阈值: ${modRateThreshold.toFixed(2)}Hz, 标准差: ${modRateSD.toFixed(2)}Hz`);
+    } else {
+        logDebug(`警告: 反转点数量不足 (${reversalPoints.length}), 结果可能不准确`);
+        
+        // 使用所有可用反转点
+        if (reversalPoints.length > 0) {
+            const modRates = reversalPoints.map(r => r.modRate);
+            const timeWindows = reversalPoints.map(r => r.timeWindow);
+            const percentages = reversalPoints.map(r => r.percentage);
+            
+            modRateThreshold = modRates.reduce((sum, val) => sum + val, 0) / modRates.length;
+            modRateSD = calculateStandardDeviation(modRates);
+            
+            timeWindowThreshold = timeWindows.reduce((sum, val) => sum + val, 0) / timeWindows.length;
+            timeWindowSD = calculateStandardDeviation(timeWindows);
+            
+            percentageThreshold = percentages.reduce((sum, val) => sum + val, 0) / percentages.length;
+            percentageSD = calculateStandardDeviation(percentages);
+        }
+    }
+    
+    // 填充结果表格
+    var tableBody = document.getElementById('resultTableBody');
+    tableBody.innerHTML = '';
+    
+    // 添加各项结果 - 新增窗长百分比
+    addResultRow(tableBody, "Window Length Threshold", percentageThreshold.toFixed(1) + "% (" + timeWindowThreshold.toFixed(2) + " ms)");
+    addResultRow(tableBody, "Window Length SD", percentageSD.toFixed(2) + "% (" + timeWindowSD.toFixed(2) + " ms)");
+    addResultRow(tableBody, "Modulation Rate Threshold", modRateThreshold.toFixed(2) + " Hz");
+    addResultRow(tableBody, "Modulation Rate SD", modRateSD.toFixed(2) + " Hz");
+    addResultRow(tableBody, "Accuracy", (accuracy * 100).toFixed(1) + "%");
+    addResultRow(tableBody, "Response Time (avg)", avgResponseTime.toFixed(2) + " s");
+    addResultRow(tableBody, "Sensitivity (d')", dprime.toFixed(2));
+    addResultRow(tableBody, "Bias (β)", beta.toFixed(2));
+    addResultRow(tableBody, "Reversals Collected", reversalPoints.length.toString());
+    addResultRow(tableBody, "Total Trials", currentTrial.toString());
+    
+    // 添加结果解释 - 使用英文解释
+    var interpretation = document.getElementById('resultInterpretation');
+    interpretation.innerHTML = `
+        <p><strong>Result Interpretation:</strong></p>
+        <p>Your temporal resolution threshold is ${percentageThreshold.toFixed(1)}% of the standard stimulus (${timeWindowThreshold.toFixed(2)} ms),
+        corresponding to a modulation rate of ${modRateThreshold.toFixed(2)} Hz.</p>
+        <p>This means you can reliably distinguish between a standard stimulus (400ms) and a comparison stimulus
+        with ${percentageThreshold.toFixed(1)}% of its window length.</p>
+        <p>You achieved ${(accuracy * 100).toFixed(1)}% accuracy with an average response time of ${avgResponseTime.toFixed(2)} seconds.</p>
+        <p>Your sensitivity index (d') of ${dprime.toFixed(2)} indicates how well you can distinguish between same and different sounds.</p>
+        <p>The test collected ${reversalPoints.length} reversal points using an adaptive staircase procedure.</p>
+    `;
+    
+    // 绘制自适应阶梯图表
+    drawStaircaseChart();
+    
+    // 显示结果容器
+    document.getElementById('experimentContainer').style.display = 'none';
+    document.getElementById('resultsContainer').style.display = 'block';
+    
+    logDebug("结果计算和显示完成");
+}
+
+// 辅助函数：添加结果行
+function addResultRow(tableBody, label, value) {
+    var row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${label}</td>
+        <td>${value}</td>
+    `;
+    tableBody.appendChild(row);
+}
+
+// 导出CSV数据函数
+function exportTrialDataCSV() {
+    if (trialRecords.length === 0) {
+        logDebug("无数据可导出");
+        return;
+    }
+    
+    // 创建CSV标题行
+    let csvContent = "Trial,Timestamp,UserResponse,CorrectResponse,IsCorrect,ReactionTime,DifficultyLevel,WindowPercentage,WindowLength,ModulationRate\n";
+    
+    // 添加每个试验的数据
+    trialRecords.forEach(trial => {
+        const row = [
+            trial.trialNumber,
+            trial.timestamp,
+            trial.userResponse,
+            trial.correctResponse,
+            trial.isCorrect,
+            trial.reactionTime,
+            trial.difficultyLevel,
+            trial.percentage.toFixed(1),
+            trial.timeWindow.toFixed(2),
+            trial.modRate.toFixed(2)
+        ].join(',');
+        csvContent += row + '\n';
+    });
+    
+    // 获取当前日期时间作为文件名
+    const now = new Date();
+    const dateString = now.getFullYear() + '-' + 
+                      (now.getMonth() + 1).toString().padStart(2, '0') + '-' + 
+                      now.getDate().toString().padStart(2, '0') + '_' + 
+                      now.getHours().toString().padStart(2, '0') + 
+                      now.getMinutes().toString().padStart(2, '0');
+                      
+    // 创建下载链接
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `temporal_resolution_data_${dateString}.csv`);
+    
+    // 触发下载
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    logDebug("CSV数据导出完成");
+}
+
+// 打印结果函数
+function printResults() {
+    // 创建一个新窗口用于打印
+    const printWindow = window.open('', '_blank');
+    
+    if (!printWindow) {
+        alert("请允许弹出窗口以打印结果");
+        return;
+    }
+    
+    // 获取最后计算的结果
+    const tableBody = document.getElementById('resultTableBody');
+    const interpretation = document.getElementById('resultInterpretation');
+    
+    // 创建打印页面内容
+    let htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Temporal Resolution Test Results</title>
+        <meta charset="UTF-8">
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                line-height: 1.6;
+            }
+            .header {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+            .result-container {
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            .result-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 30px;
+            }
+            .result-table th, .result-table td {
+                padding: 10px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+            .result-table th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            .interpretation {
+                background-color: #f9f9f9;
+                padding: 20px;
+                border-radius: 5px;
+                margin-bottom: 30px;
+            }
+            .footer {
+                text-align: center;
+                font-size: 0.9em;
+                color: #777;
+                margin-top: 50px;
+            }
+            @media print {
+                body {
+                    margin: 0;
+                    padding: 15px;
+                }
+                button {
+                    display: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="result-container">
+            <div class="header">
+                <h1>Temporal Resolution Test Results</h1>
+                <p>PLOYU-Peng's Lab: Adaptive Staircase Procedure</p>
+                <p>${new Date().toLocaleString()}</p>
+            </div>
+            
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th>Measure</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableBody.innerHTML}
+                </tbody>
+            </table>
+            
+            <div class="interpretation">
+                ${interpretation.innerHTML}
+            </div>
+            
+            <div class="footer">
+                <p>Temporal Resolution Test - High Rising 2AFC Task</p>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 30px;">
+            <button onclick="window.print(); return false;">Print</button>
+            <button onclick="window.close(); return false;">Close</button>
+        </div>
+    </body>
+    </html>
+    `;
+    
+    // 写入内容并自动打印
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    
+    logDebug("结果已准备打印");
+}
+
+// 返回实验界面
+function backToExperiment() {
+    document.getElementById('experimentContainer').style.display = 'block';
+    document.getElementById('resultsContainer').style.display = 'none';
+}
+
+// 重置实验
+function resetExperiment() {
+    currentTrial = 0;
+    correctResponses = 0;
+    totalResponseTime = 0;
+    hits = 0;
+    falseAlarms = 0;
+    misses = 0;
+    correctRejections = 0;
+    
+    // 重置自适应相关变量
+    currentDifficultyLevel = 5;  // 重置为中等难度开始
+    reversalPoints = [];
+    reversalDirections = [];
+    lastDirection = 0;
+    consecutiveCorrect = 0;
+    consecutiveWrong = 0;
+    adaptiveHistory = [];
+    
+    trialRecords = [];
+    testStarted = false;
+    
+    document.getElementById('text1').value = "Click 'Start Test' to begin";
+    document.getElementById('smile').src = "Media/null.gif";
+    document.getElementById('start').disabled = false;
+    document.getElementById('viewResult').disabled = true;
+    document.getElementById('exportCSV').disabled = true;
+    document.getElementById('promptText').style.visibility = 'hidden';
+    document.getElementById('sameButton').disabled = true;
+    document.getElementById('differentButton').disabled = true;
+    
+    // 重置进度条
+    const progressBar = document.getElementById('progressBar');
+    if (progressBar) {
+        progressBar.style.width = '0%';
+    }
+    
+    // 确保初始状态是实验界面
+    document.getElementById('experimentContainer').style.display = 'block';
+    document.getElementById('resultsContainer').style.display = 'none';
+    
+    logDebug("实验已重置");
+}
+
+// 页面初始化
+window.onload = function() {
+    // 显示初始状态
+    logDebug("页面初始化开始");
+    
+    // 预加载所有音频
+    var allAudios = document.querySelectorAll('audio');
+    logDebug("预加载 " + allAudios.length + " 个音频文件");
+    
+    for (var i = 0; i < allAudios.length; i++) {
+        allAudios[i].load();
+        
+        // 添加错误监听器
+        allAudios[i].addEventListener('error', function(e) {
+            logDebug("音频加载错误: " + this.id + " - " + (e.target.error ? e.target.error.code : "未知错误"));
+        });
+    }
+    
+    document.getElementById('text1').value = "Ready. Click 'Start Test' to begin";
+    
+    // 添加事件监听器
+    document.getElementById('start').addEventListener('click', function() {
+        logDebug("Start Test按钮被点击");
+        testStarted = true;
+        playAudioSequence();
+    });
+    
+    document.getElementById('resetButton').addEventListener('click', function() {
+        logDebug("Reset按钮被点击");
+        resetExperiment();
+    });
+    
+    document.getElementById('viewResult').addEventListener('click', function() {
+        logDebug("Results按钮被点击");
+        calculateResults();
+    });
+    
+    document.getElementById('exportCSV').addEventListener('click', function() {
+        logDebug("Export CSV按钮被点击");
+        exportTrialDataCSV();
+    });
+    
+    document.getElementById('printResultsBtn').addEventListener('click', function() {
+        logDebug("Print Results按钮被点击");
+        printResults();
+    });
+    
+    document.getElementById('backButton').addEventListener('click', function() {
+        backToExperiment();
+    });
+    
+    document.getElementById('showDebug').addEventListener('change', function() {
+        toggleDebug();
+    });
+    
+    document.getElementById('testAudioBtn').addEventListener('click', function() {
+        testAudio();
+    });
+    
+    // 添加响应按钮点击事件
+    document.getElementById('sameButton').addEventListener('click', function() {
+        processAnswer('same');
+    });
+    
+    document.getElementById('differentButton').addEventListener('click', function() {
+        processAnswer('different');
+    });
+    
+    // 添加全局错误处理
+    window.onerror = function(message, source, lineno, colno, error) {
+        logDebug("全局错误: " + message + " at " + source + ":" + lineno);
+        return false;
+    };
+    
+    // 显示调试信息
+    document.getElementById('showDebug').checked = true;
+    toggleDebug();
+    
+    // 尝试解锁音频上下文
+    unlockAudioContext();
+    
+    logDebug("页面初始化完成");
+};
+</script>
+</body>
+</html>
