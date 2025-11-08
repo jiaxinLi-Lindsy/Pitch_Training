@@ -1,0 +1,354 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLOYU-Peng's Lab: 音高敏感度训练系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #555;
+        }
+
+        .intro h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 28px;
+        }
+
+        .intro p {
+            font-size: 16px;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .experiments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .experiment-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .experiment-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .experiment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .experiment-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .experiment-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .experiment-card h3 {
+            color: #333;
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .experiment-card p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .experiment-card .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .experiment-card .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .info-section {
+            background: #e8f4f8;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .info-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .info-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-section li {
+            padding: 10px 0;
+            color: #555;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .info-section li::before {
+            content: "✓";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 28px;
+            }
+
+            .header p {
+                font-size: 16px;
+            }
+
+            .experiments-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content {
+                padding: 20px;
+            }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .rising { background: #3498db; }
+        .falling { background: #e74c3c; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🎵 PLOYU-Peng's Lab</h1>
+        <p>音高敏感度训练系统 - Pitch Sensitivity Training System</p>
+    </div>
+
+    <div class="content">
+        <div class="intro">
+            <h2>欢迎来到音高辨别实验平台</h2>
+            <p>
+                本系统采用ABX范式进行动态音高敏感度训练与测试。通过自适应阈值实验，
+                精确测量您对不同音高变化模式的辨别能力（Just Noticeable Difference, JND）。
+                请选择以下任一实验开始您的音高感知训练。
+            </p>
+        </div>
+
+        <div class="experiments-grid">
+            <div class="experiment-card" onclick="window.location.href='ABX_rising_low.html'">
+                <div class="experiment-icon">📈</div>
+                <h3>低升调辨别</h3>
+                <span class="badge rising">Rising Tone</span>
+                <p>测试对低音区升调变化的敏感度。通过调节调制窗口时长，评估您对缓慢音高上升的辨别能力。</p>
+                <a href="ABX_rising_low.html" class="btn" onclick="event.stopPropagation()">开始实验</a>
+            </div>
+
+            <div class="experiment-card" onclick="window.location.href='ABX_rising_high.html'">
+                <div class="experiment-icon">📊</div>
+                <h3>高升调辨别</h3>
+                <span class="badge rising">Rising Tone</span>
+                <p>测试对高音区升调变化的敏感度。评估您在高频范围内对音高上升的感知精度。</p>
+                <a href="ABX_rising_high.html" class="btn" onclick="event.stopPropagation()">开始实验</a>
+            </div>
+
+            <div class="experiment-card" onclick="window.location.href='ABX_falling_low.html'">
+                <div class="experiment-icon">📉</div>
+                <h3>低降调辨别</h3>
+                <span class="badge falling">Falling Tone</span>
+                <p>测试对低音区降调变化的敏感度。通过调节调制窗口时长，评估您对音高下降的辨别能力。</p>
+                <a href="ABX_falling_low.html" class="btn" onclick="event.stopPropagation()">开始实验</a>
+            </div>
+
+            <div class="experiment-card" onclick="window.location.href='ABX_falling_high.html'">
+                <div class="experiment-icon">📋</div>
+                <h3>高降调辨别</h3>
+                <span class="badge falling">Falling Tone</span>
+                <p>测试对高音区降调变化的敏感度。评估您在高频范围内对音高下降的感知精度。</p>
+                <a href="ABX_falling_high.html" class="btn" onclick="event.stopPropagation()">开始实验</a>
+            </div>
+
+            <div class="experiment-card" onclick="window.location.href='ABX_rising_mid.html'">
+                <div class="experiment-icon">📶</div>
+                <h3>中升调辨别</h3>
+                <span class="badge rising">Rising Tone</span>
+                <p>测试对中音区升调变化的敏感度。评估您在中频范围内对音高上升的辨别能力。</p>
+                <a href="ABX_rising_mid.html" class="btn" onclick="event.stopPropagation()">开始实验</a>
+            </div>
+
+            <div class="experiment-card" onclick="window.location.href='ABX_falling_mid.html'">
+                <div class="experiment-icon">📐</div>
+                <h3>中降调辨别</h3>
+                <span class="badge falling">Falling Tone</span>
+                <p>测试对中音区降调变化的敏感度。评估您在中频范围内对音高下降的辨别能力。</p>
+                <a href="ABX_falling_mid.html" class="btn" onclick="event.stopPropagation()">开始实验</a>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3>📋 实验说明</h3>
+            <ul>
+                <li><strong>实验范式：</strong>ABX三音辨别任务 - 您将听到三个音，判断第三个音更像第一个还是第二个</li>
+                <li><strong>自适应算法：</strong>系统会根据您的表现自动调整难度，精确定位您的辨别阈值</li>
+                <li><strong>测量指标：</strong>Just Noticeable Difference (JND) - 可察觉的最小差异</li>
+                <li><strong>实验时长：</strong>每个实验约需10-15分钟完成</li>
+                <li><strong>结果分析：</strong>实验结束后可查看详细的阈值分析报告和性能统计</li>
+                <li><strong>数据导出：</strong>支持导出CSV格式的详细实验数据</li>
+                <li><strong>建议环境：</strong>请在安静环境下使用耳机完成实验，以获得最佳测试效果</li>
+            </ul>
+        </div>
+
+        <div class="info-section" style="background: #fff3cd; margin-top: 20px;">
+            <h3>⚠️ 注意事项</h3>
+            <ul>
+                <li>首次使用时，浏览器可能会请求音频播放权限，请点击允许</li>
+                <li>建议使用Chrome、Firefox或Edge等现代浏览器</li>
+                <li>实验过程中请保持专注，避免中途退出</li>
+                <li>如遇到音频播放问题，可点击实验页面中的"Diagnostics"按钮进行诊断</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2024 PLOYU-Peng's Lab | Pitch Sensitivity Training System</p>
+        <p style="margin-top: 5px; font-size: 12px;">Powered by Adaptive Threshold Experiment Technology</p>
+    </div>
+</div>
+
+<script>
+    // 页面加载动画
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.experiment-card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    });
+
+    // 检查实验文件是否存在
+    window.addEventListener('load', function() {
+        const experimentFiles = [
+            'ABX_rising_low.html',
+            'ABX_rising_high.html',
+            'ABX_falling_low.html',
+            'ABX_falling_high.html',
+            'ABX_rising_mid.html',
+            'ABX_falling_mid.html'
+        ];
+
+        // 可以在这里添加文件存在性检查逻辑
+        console.log('实验系统已加载');
+        console.log('可用实验:', experimentFiles);
+    });
+</script>
+</body>
+</html>
