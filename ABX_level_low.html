@@ -493,6 +493,7 @@
                 <button onclick="testAudio()">Test All Audio</button>
                 <button onclick="showDiagnostics()">Diagnostics</button>
                 <button onclick="exportToCSV()" id="exportBtn">Export Data (CSV)</button>
+                <button onclick="testEmailSending()" id="testEmailBtn">測試郵件發送</button>
             </div>
         </div>
         
@@ -1720,6 +1721,63 @@ function view_onclick() {
             logDebug("Warning: Email service not available. Please check if emailService.js is loaded.");
         }
     }, 1000);
+}
+
+function testEmailSending() {
+    logDebug("Testing email sending functionality...");
+    
+    // 检查EmailJS是否已加载
+    if (typeof emailjs === 'undefined') {
+        alert('EmailJS庫未加載！請檢查網絡連接。');
+        logDebug("Error: EmailJS library not loaded");
+        return;
+    }
+    
+    // 检查邮件服务是否可用
+    if (typeof sendCurrentExperimentResults !== 'function') {
+        alert('郵件服務未加載！請檢查emailService.js文件。');
+        logDebug("Error: Email service not loaded");
+        return;
+    }
+    
+    // 检查是否有实验数据
+    if (trialRecords.length === 0) {
+        alert('沒有實驗數據！請先完成至少一次試驗。');
+        logDebug("Warning: No trial data available for testing");
+        return;
+    }
+    
+    // 确认发送
+    if (!confirm('確定要發送測試郵件嗎？\n\n這將發送當前的實驗數據到配置的郵箱。')) {
+        logDebug("Email test cancelled by user");
+        return;
+    }
+    
+    // 禁用按钮防止重复点击
+    const testBtn = document.getElementById('testEmailBtn');
+    const originalText = testBtn.textContent;
+    testBtn.disabled = true;
+    testBtn.textContent = '發送中...';
+    
+    logDebug("Initiating test email send...");
+    
+    // 调用邮件发送函数
+    try {
+        sendCurrentExperimentResults();
+        
+        // 3秒后恢复按钮状态
+        setTimeout(function() {
+            testBtn.disabled = false;
+            testBtn.textContent = originalText;
+            logDebug("Test email button re-enabled");
+        }, 3000);
+        
+    } catch (error) {
+        logDebug("Error during email test: " + error);
+        alert('郵件發送過程中出錯：' + error);
+        testBtn.disabled = false;
+        testBtn.textContent = originalText;
+    }
 }
 
 function exportToCSV() {
