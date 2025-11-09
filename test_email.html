@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EmailJS 测试页面</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .config-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+        }
+        .config-item {
+            margin: 10px 0;
+        }
+        .config-item label {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+        }
+        .config-item span {
+            color: #666;
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .log-container {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+        .log-entry.success {
+            color: #28a745;
+        }
+        .log-entry.error {
+            color: #dc3545;
+        }
+        .log-entry.info {
+            color: #17a2b8;
+        }
+    </style>
+    
+    <!-- EmailJS Library -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <!-- Email Configuration and Service -->
+    <script src="js/emailConfig.js"></script>
+    <script src="js/emailService.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 EmailJS 邮件发送测试</h1>
+        
+        <div class="config-section">
+            <h3>当前配置</h3>
+            <div class="config-item">
+                <label>Service ID:</label>
+                <span id="serviceId">未配置</span>
+            </div>
+            <div class="config-item">
+                <label>Template ID:</label>
+                <span id="templateId">未配置</span>
+            </div>
+            <div class="config-item">
+                <label>Public Key:</label>
+                <span id="publicKey">未配置</span>
+            </div>
+            <div class="config-item">
+                <label>收件人邮箱:</label>
+                <span id="recipientEmail">未配置</span>
+            </div>
+        </div>
+        
+        <div class="button-container">
+            <button onclick="testEmailService()" id="testBtn">发送测试邮件</button>
+            <button onclick="clearLog()">清空日志</button>
+        </div>
+        
+        <div id="statusMessage" class="status"></div>
+        
+        <div class="log-container" id="logContainer">
+            <div class="log-entry info">等待测试...</div>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px;">
+            <h4 style="margin-top: 0;">⚠️ 注意事项</h4>
+            <ul>
+                <li>请确保已在 <code>js/emailConfig.js</code> 中配置了正确的EmailJS参数</li>
+                <li>测试邮件将发送到配置文件中指定的收件人邮箱</li>
+                <li>请检查垃圾邮件文件夹</li>
+                <li>免费版EmailJS每月限制200封邮件</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 显示当前配置
+        window.onload = function() {
+            if (typeof EMAIL_CONFIG !== 'undefined') {
+                document.getElementById('serviceId').textContent = EMAIL_CONFIG.serviceId || '未配置';
+                document.getElementById('templateId').textContent = EMAIL_CONFIG.templateId || '未配置';
+                document.getElementById('publicKey').textContent = EMAIL_CONFIG.publicKey || '未配置';
+                document.getElementById('recipientEmail').textContent = EMAIL_CONFIG.recipientEmail || '未配置';
+                
+                // 检查配置是否完整
+                if (EMAIL_CONFIG.serviceId.includes('YOUR_') || 
+                    EMAIL_CONFIG.templateId.includes('YOUR_') || 
+                    EMAIL_CONFIG.publicKey.includes('YOUR_')) {
+                    showStatus('请先在 js/emailConfig.js 中配置EmailJS参数！', 'error');
+                    document.getElementById('testBtn').disabled = true;
+                } else {
+                    addLog('配置加载成功', 'success');
+                }
+            } else {
+                showStatus('无法加载配置文件！请检查 js/emailConfig.js 是否存在。', 'error');
+                document.getElementById('testBtn').disabled = true;
+            }
+        };
+        
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString('zh-CN');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry ' + type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '<div class="log-entry info">日志已清空</div>';
+        }
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        function testEmailService() {
+            addLog('开始发送测试邮件...', 'info');
+            document.getElementById('testBtn').disabled = true;
+            
+            // 创建模拟的实验数据
+            const mockTrialRecords = [
+                {
+                    trialNumber: 1,
+                    timestamp: new Date().toISOString(),
+                    difficultyLevel: 5,
+                    modulationWindowPercent: 70,
+                    modulationWindowDuration: '280.00',
+                    modulationRate: '3.5714',
+                    slope: '0.003571',
+                    userResponse: 'First Tone',
+                    correctResponse: 'First Tone',
+                    isCorrect: true,
+                    reactionTime: '1250',
+                    isReversal: false,
+                    stepDirection: 'Increasing Difficulty',
+                    standardPosition: 'First'
+                },
+                {
+                    trialNumber: 2,
+                    timestamp: new Date().toISOString(),
+                    difficultyLevel: 6,
+                    modulationWindowPercent: 80,
+                    modulationWindowDuration: '320.00',
+                    modulationRate: '3.1250',
+                    slope: '0.003125',
+                    userResponse: 'Second Tone',
+                    correctResponse: 'First Tone',
+                    isCorrect: false,
+                    reactionTime: '1580',
+                    isReversal: true,
+                    stepDirection: 'Decreasing Difficulty',
+                    standardPosition: 'Second'
+                }
+            ];
+            
+            const mockResults = {
+                jndAbsoluteDifference: 45.50,
+                jndPercentDifference: 11.38,
+                jndRatio: 0.8863,
+                webersRatio: 0.1138,
+                thresholdWindowDuration: 354.50,
+                thresholdWindowPercent: 88.63
+            };
+            
+            const mockExperimentInfo = {
+                type: 'EmailJS Test - Pitch Training',
+                completionDate: new Date().toLocaleString('zh-CN'),
+                totalTrials: 2,
+                totalReversals: 1,
+                accuracy: '50.0% (1/2)',
+                meanRT: '1415 ms'
+            };
+            
+            addLog('准备测试数据...', 'info');
+            addLog(`收件人: ${EMAIL_CONFIG.recipientEmail}`, 'info');
+            
+            // 调用邮件发送函数
+            sendExperimentResults({
+                trialRecords: mockTrialRecords,
+                results: mockResults,
+                experimentInfo: mockExperimentInfo,
+                onSuccess: function(response) {
+                    addLog('✅ 邮件发送成功！', 'success');
+                    addLog(`状态码: ${response.status}`, 'success');
+                    addLog(`响应: ${response.text}`, 'success');
+                    showStatus('测试邮件发送成功！请检查收件箱。', 'success');
+                    document.getElementById('testBtn').disabled = false;
+                },
+                onError: function(error) {
+                    addLog('❌ 邮件发送失败！', 'error');
+                    addLog(`错误信息: ${error.message || error}`, 'error');
+                    showStatus('邮件发送失败：' + (error.message || error), 'error');
+                    document.getElementById('testBtn').disabled = false;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,315 @@
+/**
+ * Email Service Module - 使用 EmailJS 发送实验结果
+ * 
+ * 使用说明：
+ * 1. 在 EmailJS 官网 (https://www.emailjs.com/) 注册账户
+ * 2. 创建邮件服务（如 Gmail）
+ * 3. 创建邮件模板
+ * 4. 获取 Service ID, Template ID 和 Public Key
+ * 5. 在 emailConfig.js 中配置这些参数
+ */
+
+// EmailJS 配置（从 emailConfig.js 导入）
+let emailConfig = {
+    serviceId: 'YOUR_SERVICE_ID',        // 替换为您的 EmailJS Service ID
+    templateId: 'YOUR_TEMPLATE_ID',      // 替换为您的 EmailJS Template ID
+    publicKey: 'YOUR_PUBLIC_KEY',        // 替换为您的 EmailJS Public Key
+    recipientEmail: 'recipient@example.com'  // 收件人邮箱
+};
+
+/**
+ * 初始化 EmailJS 配置
+ * @param {Object} config - 配置对象
+ */
+function initEmailService(config) {
+    if (config) {
+        emailConfig = { ...emailConfig, ...config };
+    }
+    
+    // 初始化 EmailJS
+    if (typeof emailjs !== 'undefined') {
+        emailjs.init(emailConfig.publicKey);
+        console.log('[EmailService] EmailJS initialized successfully');
+    } else {
+        console.error('[EmailService] EmailJS library not loaded');
+    }
+}
+
+/**
+ * 生成 CSV 内容（从实验数据生成）
+ * @param {Array} trialRecords - 试验记录数组
+ * @param {Object} results - 实验结果对象
+ * @param {Object} experimentInfo - 实验信息
+ * @returns {string} CSV 格式的字符串
+ */
+function generateCSVContent(trialRecords, results, experimentInfo) {
+    const headers = [
+        "Trial Number", 
+        "Timestamp", 
+        "Difficulty Level", 
+        "Modulation Window (%)",
+        "Modulation Window (ms)",
+        "Modulation Rate (semitones/s)",
+        "Slope (semitones/ms)",
+        "Standard Position",
+        "User Response", 
+        "Correct Response", 
+        "Is Correct", 
+        "Reaction Time (ms)", 
+        "Is Reversal",
+        "Step Direction"
+    ];
+    
+    const csvRows = [];
+    csvRows.push(headers.join(","));
+    
+    // 添加试验数据
+    trialRecords.forEach(function(trial) {
+        const row = [
+            trial.trialNumber,
+            trial.timestamp,
+            trial.difficultyLevel,
+            trial.modulationWindowPercent || 'N/A',
+            trial.modulationWindowDuration || 'N/A',
+            trial.modulationRate || 'N/A',
+            trial.slope || 'N/A',
+            trial.standardPosition || 'N/A',
+            trial.userResponse,
+            trial.correctResponse,
+            trial.isCorrect ? "1" : "0",
+            trial.reactionTime,
+            trial.isReversal ? "1" : "0",
+            trial.stepDirection || 'N/A'
+        ];
+        csvRows.push(row.join(","));
+    });
+    
+    // 添加结果摘要
+    if (results) {
+        csvRows.push("\nRESULTS SUMMARY");
+        csvRows.push("\nJND Metrics");
+        csvRows.push("Parameter,Value,Unit,Description");
+        
+        if (results.jndAbsoluteDifference !== undefined) {
+            csvRows.push("JND Absolute Difference," + 
+                results.jndAbsoluteDifference.toFixed(2) + ",ms,Detectable difference from standard");
+        }
+        
+        if (results.jndPercentDifference !== undefined) {
+            csvRows.push("JND Percentage Difference," + 
+                results.jndPercentDifference.toFixed(2) + ",%,Percentage difference from standard");
+        }
+        
+        if (results.webersRatio !== undefined) {
+            csvRows.push("Weber's Ratio," + 
+                results.webersRatio.toFixed(4) + ",ratio,Sensitivity measure");
+        }
+        
+        // 添加实验信息
+        if (experimentInfo) {
+            csvRows.push("\nExperiment Information");
+            csvRows.push("Parameter,Value");
+            csvRows.push("Experiment Type," + (experimentInfo.type || 'N/A'));
+            csvRows.push("Completion Date," + (experimentInfo.completionDate || new Date().toISOString()));
+            csvRows.push("Total Trials," + (experimentInfo.totalTrials || trialRecords.length));
+            csvRows.push("Total Reversals," + (experimentInfo.totalReversals || 'N/A'));
+        }
+    }
+    
+    return csvRows.join("\n");
+}
+
+/**
+ * 将 CSV 内容转换为 Base64 编码（用于附件）
+ * @param {string} csvContent - CSV 内容字符串
+ * @returns {string} Base64 编码的字符串
+ */
+function csvToBase64(csvContent) {
+    // 使用 UTF-8 BOM 确保中文正确显示
+    const BOM = '\uFEFF';
+    const contentWithBOM = BOM + csvContent;
+    return btoa(unescape(encodeURIComponent(contentWithBOM)));
+}
+
+/**
+ * 发送实验结果邮件（带 CSV 附件）
+ * @param {Object} params - 参数对象
+ * @param {Array} params.trialRecords - 试验记录数组
+ * @param {Object} params.results - 实验结果对象
+ * @param {Object} params.experimentInfo - 实验信息
+ * @param {Function} params.onSuccess - 成功回调函数
+ * @param {Function} params.onError - 错误回调函数
+ */
+function sendExperimentResults(params) {
+    const {
+        trialRecords = [],
+        results = {},
+        experimentInfo = {},
+        onSuccess = null,
+        onError = null
+    } = params;
+    
+    console.log('[EmailService] Preparing to send email...');
+    
+    // 检查 EmailJS 是否已加载
+    if (typeof emailjs === 'undefined') {
+        const errorMsg = 'EmailJS library not loaded. Please include EmailJS script in your HTML.';
+        console.error('[EmailService]', errorMsg);
+        if (onError) onError(new Error(errorMsg));
+        return;
+    }
+    
+    // 生成 CSV 内容
+    const csvContent = generateCSVContent(trialRecords, results, experimentInfo);
+    const csvBase64 = csvToBase64(csvContent);
+    
+    // 生成文件名（包含时间戳）
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+    const fileName = `experiment_results_${experimentInfo.type || 'data'}_${timestamp}.csv`;
+    
+    // 准备邮件参数
+    const templateParams = {
+        to_email: emailConfig.recipientEmail,
+        experiment_type: experimentInfo.type || 'Pitch Training Experiment',
+        completion_date: experimentInfo.completionDate || new Date().toLocaleString('zh-CN'),
+        total_trials: experimentInfo.totalTrials || trialRecords.length,
+        total_reversals: experimentInfo.totalReversals || 'N/A',
+        jnd_value: results.jndAbsoluteDifference ? results.jndAbsoluteDifference.toFixed(2) + ' ms' : 'N/A',
+        accuracy: experimentInfo.accuracy || 'N/A',
+        mean_rt: experimentInfo.meanRT || 'N/A',
+        attachment_name: fileName,
+        attachment_content: csvBase64,
+        // 添加简短的结果摘要
+        results_summary: generateResultsSummary(results, experimentInfo)
+    };
+    
+    console.log('[EmailService] Sending email with parameters:', {
+        to: templateParams.to_email,
+        experimentType: templateParams.experiment_type,
+        fileName: fileName
+    });
+    
+    // 发送邮件
+    emailjs.send(
+        emailConfig.serviceId,
+        emailConfig.templateId,
+        templateParams
+    )
+    .then(function(response) {
+        console.log('[EmailService] Email sent successfully!', response.status, response.text);
+        if (onSuccess) {
+            onSuccess(response);
+        }
+    })
+    .catch(function(error) {
+        console.error('[EmailService] Failed to send email:', error);
+        if (onError) {
+            onError(error);
+        }
+    });
+}
+
+/**
+ * 生成结果摘要文本
+ * @param {Object} results - 实验结果
+ * @param {Object} experimentInfo - 实验信息
+ * @returns {string} 摘要文本
+ */
+function generateResultsSummary(results, experimentInfo) {
+    let summary = '';
+    
+    if (results.jndAbsoluteDifference !== undefined) {
+        summary += `JND: ${results.jndAbsoluteDifference.toFixed(2)} ms\n`;
+    }
+    
+    if (results.jndPercentDifference !== undefined) {
+        summary += `JND Percentage: ${results.jndPercentDifference.toFixed(2)}%\n`;
+    }
+    
+    if (experimentInfo.accuracy) {
+        summary += `Accuracy: ${experimentInfo.accuracy}\n`;
+    }
+    
+    if (experimentInfo.meanRT) {
+        summary += `Mean RT: ${experimentInfo.meanRT} ms\n`;
+    }
+    
+    return summary || 'See attached CSV file for detailed results.';
+}
+
+/**
+ * 快速发送函数 - 自动从全局变量获取数据
+ * 此函数假设实验页面中已定义相关全局变量
+ */
+function sendCurrentExperimentResults() {
+    // 尝试从全局作用域获取实验数据
+    const trialRecords = window.trialRecords || [];
+    const results = {
+        jndAbsoluteDifference: window.jndAbsoluteDifference,
+        jndPercentDifference: window.jndPercentDifference,
+        jndRatio: window.jndRatio,
+        webersRatio: window.webersRatio,
+        thresholdWindowDuration: window.thresholdWindowDuration,
+        thresholdWindowPercent: window.thresholdWindowPercent
+    };
+    
+    const experimentInfo = {
+        type: document.querySelector('.training-info')?.textContent || 'Pitch Training',
+        completionDate: new Date().toLocaleString('zh-CN'),
+        totalTrials: window.numberOfIterations || trialRecords.length,
+        totalReversals: window.NumberOfReversals || 0,
+        accuracy: calculateAccuracyForEmail(),
+        meanRT: calculateMeanRTForEmail()
+    };
+    
+    sendExperimentResults({
+        trialRecords: trialRecords,
+        results: results,
+        experimentInfo: experimentInfo,
+        onSuccess: function(response) {
+            alert('实验结果已成功发送到指定邮箱！');
+        },
+        onError: function(error) {
+            alert('发送邮件失败：' + error.message + '\n请检查网络连接或联系管理员。');
+        }
+    });
+}
+
+/**
+ * 辅助函数：计算准确率（用于邮件）
+ */
+function calculateAccuracyForEmail() {
+    if (!window.trialRecords || window.trialRecords.length === 0) {
+        return 'N/A';
+    }
+    
+    const correct = window.trialRecords.filter(t => t.isCorrect).length;
+    const total = window.trialRecords.length;
+    const percentage = (correct / total * 100).toFixed(1);
+    
+    return `${percentage}% (${correct}/${total})`;
+}
+
+/**
+ * 辅助函数：计算平均反应时间（用于邮件）
+ */
+function calculateMeanRTForEmail() {
+    if (!window.trialRecords || window.trialRecords.length === 0) {
+        return 'N/A';
+    }
+    
+    const allRTs = window.trialRecords.map(t => parseFloat(t.reactionTime));
+    const mean = allRTs.reduce((a, b) => a + b, 0) / allRTs.length;
+    
+    return mean.toFixed(0) + ' ms';
+}
+
+// 导出函数（如果使用模块化）
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        initEmailService,
+        sendExperimentResults,
+        sendCurrentExperimentResults,
+        generateCSVContent
+    };
+}

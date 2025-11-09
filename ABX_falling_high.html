@@ -449,6 +449,13 @@
             margin: 10px 0;
         }
     </style>
+    
+    <!-- EmailJS Library -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <!-- Email Configuration and Service -->
+    <script src="js/emailConfig.js"></script>
+    <script src="js/emailService.js"></script>
 </head>
 <body>
     <div class="container">
@@ -1015,6 +1022,19 @@ function calculateResults() {
     logDebug("Weber's Ratio: " + webersRatio.toFixed(4));
     
     document.getElementById('text1').value = "Test complete! JND: " + jndAbsoluteDifference.toFixed(1) + " ms";
+    
+    // 自动发送实验结果到指定邮箱
+    logDebug("Preparing to send experiment results via email...");
+    
+    // 延迟1秒后发送邮件，确保所有数据已准备好
+    setTimeout(function() {
+        if (typeof sendCurrentExperimentResults === 'function') {
+            sendCurrentExperimentResults();
+            logDebug("Email sending initiated");
+        } else {
+            logDebug("Warning: Email service not available. Please check if emailService.js is loaded.");
+        }
+    }, 1000);
 }
 
 function calculateAverageWindowPercent(startIndex) {
