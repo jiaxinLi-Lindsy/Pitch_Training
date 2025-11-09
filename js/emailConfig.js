@@ -13,7 +13,7 @@ const EMAIL_CONFIG = {
     templateId: 'template_4c3g3ss',
     
     // EmailJS Public Key（从 EmailJS 控制台获取）
-    publicKey: 'IvI8CHGPxl-AW19AD',
+    publicKey: 'zCRuIOysDOYJWbovr',
     
     // 收件人邮箱（固定接收实验结果的邮箱）
     recipientEmail: 'jiaxin.lindsay.li@gmail.com'
@@ -72,7 +72,8 @@ const EMAIL_CONFIG = {
  * 5. 将上述信息填入本配置文件的对应位置
  */
 
-// 初始化 EmailJS（在页面加载时自动调用）
-if (typeof initEmailService === 'function') {
-    initEmailService(EMAIL_CONFIG);
-}
+// EmailJS 将在 emailService.js 中自动初始化
+// 确保在 HTML 中按正确顺序加载脚本：
+// 1. EmailJS CDN 库
+// 2. emailConfig.js（本文件）
+// 3. emailService.js

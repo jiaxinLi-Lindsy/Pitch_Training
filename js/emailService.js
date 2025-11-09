@@ -11,10 +11,10 @@
 
 // EmailJS 配置（从 emailConfig.js 导入）
 let emailConfig = {
-    serviceId: 'YOUR_SERVICE_ID',        // 替换为您的 EmailJS Service ID
-    templateId: 'YOUR_TEMPLATE_ID',      // 替换为您的 EmailJS Template ID
-    publicKey: 'YOUR_PUBLIC_KEY',        // 替换为您的 EmailJS Public Key
-    recipientEmail: 'recipient@example.com'  // 收件人邮箱
+    serviceId: 'service_exe9d5a',        // 替换为您的 EmailJS Service ID
+    templateId: 'template_4c3g3ss',      // 替换为您的 EmailJS Template ID
+    publicKey: 'zCRuIOysDOYJWbovr',        // 替换为您的 EmailJS Public Key
+    recipientEmail: 'jiaxin.lindsay.li@gmail.com'  // 收件人邮箱
 };
 
 /**
@@ -30,9 +30,25 @@ function initEmailService(config) {
     if (typeof emailjs !== 'undefined') {
         emailjs.init(emailConfig.publicKey);
         console.log('[EmailService] EmailJS initialized successfully');
+        console.log('[EmailService] Public Key:', emailConfig.publicKey);
     } else {
         console.error('[EmailService] EmailJS library not loaded');
     }
+}
+
+// 自动初始化（当页面加载完成时）
+if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', function() {
+        if (typeof EMAIL_CONFIG !== 'undefined') {
+            initEmailService(EMAIL_CONFIG);
+        } else {
+            // 如果EMAIL_CONFIG还未加载，使用默认配置初始化
+            if (typeof emailjs !== 'undefined') {
+                emailjs.init(emailConfig.publicKey);
+                console.log('[EmailService] EmailJS initialized with default config');
+            }
+        }
+    });
 }
 
 /**

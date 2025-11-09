@@ -113,6 +113,22 @@
     <!-- Email Configuration and Service -->
     <script src="js/emailConfig.js"></script>
     <script src="js/emailService.js"></script>
+    
+    <script>
+        // 确保EmailJS库加载完成后再初始化
+        (function() {
+            function initWhenReady() {
+                if (typeof emailjs !== 'undefined' && typeof EMAIL_CONFIG !== 'undefined') {
+                    emailjs.init(EMAIL_CONFIG.publicKey);
+                    console.log('[Test Page] EmailJS initialized with public key:', EMAIL_CONFIG.publicKey);
+                } else {
+                    console.log('[Test Page] Waiting for EmailJS and config to load...');
+                    setTimeout(initWhenReady, 100);
+                }
+            }
+            initWhenReady();
+        })();
+    </script>
 </head>
 <body>
     <div class="container">
@@ -163,25 +179,42 @@
     <script>
         // 显示当前配置
         window.onload = function() {
-            if (typeof EMAIL_CONFIG !== 'undefined') {
-                document.getElementById('serviceId').textContent = EMAIL_CONFIG.serviceId || '未配置';
-                document.getElementById('templateId').textContent = EMAIL_CONFIG.templateId || '未配置';
-                document.getElementById('publicKey').textContent = EMAIL_CONFIG.publicKey || '未配置';
-                document.getElementById('recipientEmail').textContent = EMAIL_CONFIG.recipientEmail || '未配置';
-                
-                // 检查配置是否完整
-                if (EMAIL_CONFIG.serviceId.includes('YOUR_') || 
-                    EMAIL_CONFIG.templateId.includes('YOUR_') || 
-                    EMAIL_CONFIG.publicKey.includes('YOUR_')) {
-                    showStatus('请先在 js/emailConfig.js 中配置EmailJS参数！', 'error');
-                    document.getElementById('testBtn').disabled = true;
+            // 等待一小段时间确保所有脚本都已加载
+            setTimeout(function() {
+                if (typeof EMAIL_CONFIG !== 'undefined') {
+                    document.getElementById('serviceId').textContent = EMAIL_CONFIG.serviceId || '未配置';
+                    document.getElementById('templateId').textContent = EMAIL_CONFIG.templateId || '未配置';
+                    document.getElementById('publicKey').textContent = EMAIL_CONFIG.publicKey || '未配置';
+                    document.getElementById('recipientEmail').textContent = EMAIL_CONFIG.recipientEmail || '未配置';
+                    
+                    // 检查EmailJS是否已初始化
+                    if (typeof emailjs === 'undefined') {
+                        showStatus('EmailJS库未加载！请检查网络连接。', 'error');
+                        document.getElementById('testBtn').disabled = true;
+                        addLog('❌ EmailJS库未加载', 'error');
+                        return;
+                    }
+                    
+                    // 检查配置是否完整
+                    if (EMAIL_CONFIG.serviceId.includes('YOUR_') || 
+                        EMAIL_CONFIG.templateId.includes('YOUR_') || 
+                        EMAIL_CONFIG.publicKey.includes('YOUR_')) {
+                        showStatus('请先在 js/emailConfig.js 中配置EmailJS参数！', 'error');
+                        document.getElementById('testBtn').disabled = true;
+                        addLog('⚠️ 配置未完成', 'error');
+                    } else {
+                        addLog('✅ 配置加载成功', 'success');
+                        addLog('✅ EmailJS已初始化', 'success');
+                        addLog('Service ID: ' + EMAIL_CONFIG.serviceId, 'info');
+                        addLog('Template ID: ' + EMAIL_CONFIG.templateId, 'info');
+                        addLog('Public Key: ' + EMAIL_CONFIG.publicKey, 'info');
+                    }
                 } else {
-                    addLog('配置加载成功', 'success');
+                    showStatus('无法加载配置文件！请检查 js/emailConfig.js 是否存在。', 'error');
+                    document.getElementById('testBtn').disabled = true;
+                    addLog('❌ 配置文件未加载', 'error');
                 }
-            } else {
-                showStatus('无法加载配置文件！请检查 js/emailConfig.js 是否存在。', 'error');
-                document.getElementById('testBtn').disabled = true;
-            }
+            }, 500);
         };
         
         function addLog(message, type = 'info') {
