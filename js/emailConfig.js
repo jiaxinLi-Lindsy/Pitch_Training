@@ -13,10 +13,7 @@ const EMAIL_CONFIG = {
     templateId: 'template_4c3g3ss',
     
     // EmailJS Public Key（从 EmailJS 控制台获取）
-    publicKey: 'zCRuIOysDOYJWbovr',
-    
-    // 收件人邮箱（固定接收实验结果的邮箱）
-    recipientEmail: 'jiaxin.lindsay.li@gmail.com'
+    publicKey: 'zCRuIOysDOYJWbovr'
 };
 
 /**

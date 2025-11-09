@@ -13,8 +13,7 @@
 let emailConfig = {
     serviceId: 'service_exe9d5a',        // 替换为您的 EmailJS Service ID
     templateId: 'template_4c3g3ss',      // 替换为您的 EmailJS Template ID
-    publicKey: 'zCRuIOysDOYJWbovr',        // 替换为您的 EmailJS Public Key
-    recipientEmail: 'jiaxin.lindsay.li@gmail.com'  // 收件人邮箱
+    publicKey: 'zCRuIOysDOYJWbovr'        // 替换为您的 EmailJS Public Key
 };
 
 /**
@@ -195,7 +194,6 @@ function sendExperimentResults(params) {
     
     // 准备邮件参数
     const templateParams = {
-        to_email: emailConfig.recipientEmail,
         participant_id: experimentInfo.participantId || 'N/A',
         experiment_type: experimentInfo.type || 'Pitch Training Experiment',
         completion_date: experimentInfo.completionDate || new Date().toLocaleString('zh-CN'),
@@ -211,7 +209,6 @@ function sendExperimentResults(params) {
     };
     
     console.log('[EmailService] Sending email with parameters:', {
-        to: templateParams.to_email,
         experimentType: templateParams.experiment_type,
         fileName: fileName
     });
