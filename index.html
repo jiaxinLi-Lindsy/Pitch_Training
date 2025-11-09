@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PLOYU-Peng's Lab: 音高敏感度训练系统</title>
+    <title>PLOYU-Peng's Lab: 音高敏感度訓練系統</title>
     <style>
         * {
             margin: 0;
@@ -293,104 +293,104 @@
 <div class="container">
     <div class="header">
         <h1>🎵 PLOYU-Peng's Lab</h1>
-        <p>音高敏感度训练系统 - Pitch Sensitivity Training System</p>
+        <p>音高敏感度訓練系統 - Pitch Sensitivity Training System</p>
     </div>
 
     <div class="content">
         <div class="intro">
-            <h2>欢迎来到音高辨别实验平台</h2>
+            <h2>歡迎來到音高辨別實驗平台</h2>
             <p>
-                本系统采用ABX范式进行动态音高敏感度训练与测试。通过自适应阈值实验，
-                精确测量您对不同音高变化模式的辨别能力（Just Noticeable Difference, JND）。
-                请选择以下任一实验开始您的音高感知训练。
+                本系統採用ABX範式進行動態音高敏感度訓練與測試。通過自適應閾值實驗，
+                精確測量您對不同音高變化模式的辨別能力（Just Noticeable Difference, JND）。
+                請選擇以下任一實驗開始您的音高感知訓練。
             </p>
         </div>
 
         <div class="participant-id-section">
-            <h3>👤 被试信息</h3>
+            <h3>👤 被試信息</h3>
             <div class="id-input-group">
-                <label for="participantId">被试ID：</label>
+                <label for="participantId">被試ID：</label>
                 <input 
                     type="text" 
                     id="participantId" 
-                    placeholder="请输入您的被试ID（必填）" 
+                    placeholder="請輸入您的被試ID（必填）" 
                     maxlength="50"
                     autocomplete="off"
                 >
             </div>
-            <div class="error-message" id="errorMessage">⚠️ 请输入被试ID后再开始实验</div>
+            <div class="error-message" id="errorMessage">⚠️ 請輸入被試ID後再開始實驗</div>
         </div>
 
         <div class="experiments-grid">
             <div class="experiment-card" onclick="startExperiment('ABX_rising_low.html')">
                 <div class="experiment-icon">📈</div>
-                <h3>动态音高辨别-低升调</h3>
-                <span class="badge rising">Rising Tone</span>
-                <p>测试对低音区升调变化的敏感度。通过调节调制窗口时长，评估您对缓慢音高上升的辨别能力。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_rising_low.html')">开始实验</button>
+                <h3>動態音高辨別-低升調</h3>
+                <span class="badge rising">Rising Low</span>
+                <p>測試對低音區升調變化的敏感度。通過調節調製窗口時長，評估您對緩慢音高上升的辨別能力。</p>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_rising_low.html')">開始實驗</button>
             </div>
 
             <div class="experiment-card" onclick="startExperiment('ABX_rising_high.html')">
                 <div class="experiment-icon">📊</div>
-                <h3>动态音高辨别-高升调</h3>
-                <span class="badge rising">Rising Tone</span>
-                <p>测试对高音区升调变化的敏感度。评估您在高频范围内对音高上升的感知精度。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_rising_high.html')">开始实验</button>
+                <h3>動態音高辨別-高升調</h3>
+                <span class="badge rising">Rising High</span>
+                <p>測試對高音區升調變化的敏感度。評估您在高頻範圍內對音高上升的感知精度。</p>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_rising_high.html')">開始實驗</button>
             </div>
 
             <div class="experiment-card" onclick="startExperiment('ABX_falling_low.html')">
                 <div class="experiment-icon">📉</div>
-                <h3>动态音高辨别-低降调</h3>
-                <span class="badge falling">Falling Tone</span>
-                <p>测试对低音区降调变化的敏感度。通过调节调制窗口时长，评估您对音高下降的辨别能力。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_falling_low.html')">开始实验</button>
+                <h3>動態音高辨別-低降調</h3>
+                <span class="badge falling">Falling Low</span>
+                <p>測試對低音區降調變化的敏感度。通過調節調製窗口時長，評估您對音高下降的辨別能力。</p>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_falling_low.html')">開始實驗</button>
             </div>
 
             <div class="experiment-card" onclick="startExperiment('ABX_falling_high.html')">
                 <div class="experiment-icon">📋</div>
-                <h3>动态音高辨别-高降调</h3>
-                <span class="badge falling">Falling Tone</span>
-                <p>测试对低音区平调变化的敏感度。评估您在高频范围内对音高下降的感知精度。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_falling_high.html')">开始实验</button>
+                <h3>動態音高辨別-高降調</h3>
+                <span class="badge falling">Falling High</span>
+                <p>測試對低音區平調變化的敏感度。評估您在高頻範圍內對音高下降的感知精度。</p>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_falling_high.html')">開始實驗</button>
             </div>
 
             <div class="experiment-card" onclick="startExperiment('ABX_level_high.html')">
                 <div class="experiment-icon">📶</div>
-                <h3>静态音高辨别-高调域</h3>
-                <span class="badge rising">Rising Tone</span>
-                <p>测试对高音区平调变化的敏感度。评估您在高频范围内对音高的辨别能力。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_level_high.html')">开始实验</button>
+                <h3>靜態音高辨別-高調域</h3>
+                <span class="badge rising">Level High</span>
+                <p>測試對高音區平調變化的敏感度。評估您在高頻範圍內對音高的辨別能力。</p>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_level_high.html')">開始實驗</button>
             </div>
 
             <div class="experiment-card" onclick="startExperiment('ABX_level_low.html')">
                 <div class="experiment-icon">📐</div>
-                <h3>静态音高辨别-低调域</h3>
-                <span class="badge falling">Falling Tone</span>
-                <p>测试对低音区平调变化的敏感度。评估您在低频范围内对音高的辨别能力。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_level_low.html')">开始实验</button>
+                <h3>靜態音高辨別-低調域</h3>
+                <span class="badge falling">Level Low</span>
+                <p>測試對低音區平調變化的敏感度。評估您在低頻範圍內對音高的辨別能力。</p>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_level_low.html')">開始實驗</button>
             </div>
         </div>
 
         <div class="info-section">
-            <h3>📋 实验说明</h3>
+            <h3>📋 實驗說明</h3>
             <ul>
-                <li><strong>实验范式：</strong>ABX三音辨别任务 - 您将听到三个音，判断第三个音更像第一个还是第二个</li>
-                <li><strong>自适应算法：</strong>系统会根据您的表现自动调整难度，精确定位您的辨别阈值</li>
-                <li><strong>测量指标：</strong>Just Noticeable Difference (JND) - 可察觉的最小差异</li>
-                <li><strong>实验时长：</strong>每个实验约需10-15分钟完成</li>
-                <li><strong>结果分析：</strong>实验结束后可查看详细的阈值分析报告和性能统计</li>
-                <li><strong>数据导出：</strong>支持导出CSV格式的详细实验数据</li>
-                <li><strong>建议环境：</strong>请在安静环境下使用耳机完成实验，以获得最佳测试效果</li>
+                <li><strong>實驗範式：</strong>ABX三音辨別任務 - 您將聽到三個音，判斷第三個音更像第一個還是第二個</li>
+                <li><strong>自適應算法：</strong>系統會根據您的表現自動調整難度，精確定位您的辨別閾值</li>
+                <li><strong>測量指標：</strong>Just Noticeable Difference (JND) - 可察覺的最小差異</li>
+                <li><strong>實驗時長：</strong>每個實驗約需10-15分鐘完成</li>
+                <li><strong>結果分析：</strong>實驗結束後可查看詳細的閾值分析報告和性能統計</li>
+                <li><strong>數據導出：</strong>支持導出CSV格式的詳細實驗數據</li>
+                <li><strong>建議環境：</strong>請在安靜環境下使用耳機完成實驗，以獲得最佳測試效果</li>
             </ul>
         </div>
 
         <div class="info-section" style="background: #fff3cd; margin-top: 20px;">
-            <h3>⚠️ 注意事项</h3>
+            <h3>⚠️ 注意事項</h3>
             <ul>
-                <li>首次使用时，浏览器可能会请求音频播放权限，请点击允许</li>
-                <li>建议使用Chrome、Firefox或Edge等现代浏览器</li>
-                <li>实验过程中请保持专注，避免中途退出</li>
-                <li>如遇到音频播放问题，可点击实验页面中的"Diagnostics"按钮进行诊断</li>
+                <li>首次使用時，瀏覽器可能會請求音頻播放權限，請點擊允許</li>
+                <li>建議使用Chrome、Firefox或Edge等現代瀏覽器</li>
+                <li>實驗過程中請保持專注，避免中途退出</li>
+                <li>如遇到音頻播放問題，可點擊實驗頁面中的"Diagnostics"按鈕進行診斷</li>
             </ul>
         </div>
     </div>
@@ -428,16 +428,16 @@
         ];
 
         // 可以在这里添加文件存在性检查逻辑
-        console.log('实验系统已加载');
-        console.log('可用实验:', experimentFiles);
+        console.log('實驗系統已加載');
+        console.log('可用實驗:', experimentFiles);
         
-        // 尝试从 localStorage 恢复被试ID
+        // 嘗試從 localStorage 恢復被試ID
         const savedId = localStorage.getItem('participantId');
         if (savedId) {
             document.getElementById('participantId').value = savedId;
         }
         
-        // 监听输入框变化，清除错误提示
+        // 監聽輸入框變化，清除錯誤提示
         document.getElementById('participantId').addEventListener('input', function() {
             this.classList.remove('error');
             document.getElementById('errorMessage').classList.remove('show');
@@ -445,15 +445,15 @@
     });
     
     /**
-     * 验证被试ID并跳转到实验页面
-     * @param {string} experimentUrl - 实验页面URL
+     * 驗證被試ID並跳轉到實驗頁面
+     * @param {string} experimentUrl - 實驗頁面URL
      */
     function startExperiment(experimentUrl) {
         const participantId = document.getElementById('participantId').value.trim();
         const inputElement = document.getElementById('participantId');
         const errorElement = document.getElementById('errorMessage');
         
-        // 验证被试ID
+        // 驗證被試ID
         if (!participantId) {
             inputElement.classList.add('error');
             errorElement.classList.add('show');
@@ -461,10 +461,10 @@
             return false;
         }
         
-        // 保存被试ID到 localStorage
+        // 保存被試ID到 localStorage
         localStorage.setItem('participantId', participantId);
         
-        // 跳转到实验页面，通过URL参数传递被试ID
+        // 跳轉到實驗頁面，通過URL參數傳遞被試ID
         window.location.href = experimentUrl + '?participantId=' + encodeURIComponent(participantId);
     }
 </script>
