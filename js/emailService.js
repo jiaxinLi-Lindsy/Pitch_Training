@@ -43,6 +43,13 @@ function initEmailService(config) {
  * @returns {string} CSV 格式的字符串
  */
 function generateCSVContent(trialRecords, results, experimentInfo) {
+    // 添加被试ID到CSV开头
+    const csvRows = [];
+    if (experimentInfo.participantId) {
+        csvRows.push("Participant ID: " + experimentInfo.participantId);
+        csvRows.push("");
+    }
+    
     const headers = [
         "Trial Number", 
         "Timestamp", 
@@ -60,7 +67,6 @@ function generateCSVContent(trialRecords, results, experimentInfo) {
         "Step Direction"
     ];
     
-    const csvRows = [];
     csvRows.push(headers.join(","));
     
     // 添加试验数据
@@ -109,6 +115,9 @@ function generateCSVContent(trialRecords, results, experimentInfo) {
         if (experimentInfo) {
             csvRows.push("\nExperiment Information");
             csvRows.push("Parameter,Value");
+            if (experimentInfo.participantId) {
+                csvRows.push("Participant ID," + experimentInfo.participantId);
+            }
             csvRows.push("Experiment Type," + (experimentInfo.type || 'N/A'));
             csvRows.push("Completion Date," + (experimentInfo.completionDate || new Date().toISOString()));
             csvRows.push("Total Trials," + (experimentInfo.totalTrials || trialRecords.length));
@@ -163,13 +172,15 @@ function sendExperimentResults(params) {
     const csvContent = generateCSVContent(trialRecords, results, experimentInfo);
     const csvBase64 = csvToBase64(csvContent);
     
-    // 生成文件名（包含时间戳）
+    // 生成文件名（包含被试ID和时间戳）
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-    const fileName = `experiment_results_${experimentInfo.type || 'data'}_${timestamp}.csv`;
+    const participantPrefix = experimentInfo.participantId ? `${experimentInfo.participantId}_` : '';
+    const fileName = `${participantPrefix}experiment_results_${experimentInfo.type || 'data'}_${timestamp}.csv`;
     
     // 准备邮件参数
     const templateParams = {
         to_email: emailConfig.recipientEmail,
+        participant_id: experimentInfo.participantId || 'N/A',
         experiment_type: experimentInfo.type || 'Pitch Training Experiment',
         completion_date: experimentInfo.completionDate || new Date().toLocaleString('zh-CN'),
         total_trials: experimentInfo.totalTrials || trialRecords.length,
@@ -253,7 +264,11 @@ function sendCurrentExperimentResults() {
         thresholdWindowPercent: window.thresholdWindowPercent
     };
     
+    // 获取被试ID（从URL参数或localStorage）
+    const participantId = getParticipantId();
+    
     const experimentInfo = {
+        participantId: participantId,
         type: document.querySelector('.training-info')?.textContent || 'Pitch Training',
         completionDate: new Date().toLocaleString('zh-CN'),
         totalTrials: window.numberOfIterations || trialRecords.length,
@@ -302,6 +317,28 @@ function calculateMeanRTForEmail() {
     const mean = allRTs.reduce((a, b) => a + b, 0) / allRTs.length;
     
     return mean.toFixed(0) + ' ms';
+}
+
+/**
+ * 辅助函数：获取被试ID
+ * 优先从URL参数获取，其次从localStorage获取
+ */
+function getParticipantId() {
+    // 从URL参数获取
+    const urlParams = new URLSearchParams(window.location.search);
+    let participantId = urlParams.get('participantId');
+    
+    // 如果URL中没有，尝试从localStorage获取
+    if (!participantId) {
+        participantId = localStorage.getItem('participantId');
+    }
+    
+    // 如果获取到了，保存到localStorage（用于页面刷新后保持）
+    if (participantId) {
+        localStorage.setItem('participantId', participantId);
+    }
+    
+    return participantId || 'Unknown';
 }
 
 // 导出函数（如果使用模块化）

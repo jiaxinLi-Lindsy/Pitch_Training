@@ -58,6 +58,73 @@
             color: #555;
         }
 
+        .participant-id-section {
+            background: #f0f7ff;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid #667eea;
+        }
+
+        .participant-id-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 22px;
+            text-align: center;
+        }
+
+        .id-input-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .id-input-group label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .id-input-group input {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            width: 250px;
+            transition: all 0.3s ease;
+        }
+
+        .id-input-group input:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .id-input-group input.error {
+            border-color: #e74c3c;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
         .intro h2 {
             color: #333;
             margin-bottom: 15px;
@@ -239,53 +306,68 @@
             </p>
         </div>
 
+        <div class="participant-id-section">
+            <h3>👤 被试信息</h3>
+            <div class="id-input-group">
+                <label for="participantId">被试ID：</label>
+                <input 
+                    type="text" 
+                    id="participantId" 
+                    placeholder="请输入您的被试ID（必填）" 
+                    maxlength="50"
+                    autocomplete="off"
+                >
+            </div>
+            <div class="error-message" id="errorMessage">⚠️ 请输入被试ID后再开始实验</div>
+        </div>
+
         <div class="experiments-grid">
-            <div class="experiment-card" onclick="window.location.href='ABX_rising_low.html'">
+            <div class="experiment-card" onclick="startExperiment('ABX_rising_low.html')">
                 <div class="experiment-icon">📈</div>
                 <h3>动态音高辨别-低升调</h3>
                 <span class="badge rising">Rising Tone</span>
                 <p>测试对低音区升调变化的敏感度。通过调节调制窗口时长，评估您对缓慢音高上升的辨别能力。</p>
-                <a href="ABX_rising_low.html" class="btn" onclick="event.stopPropagation()">开始实验</a>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_rising_low.html')">开始实验</button>
             </div>
 
-            <div class="experiment-card" onclick="window.location.href='ABX_rising_high.html'">
+            <div class="experiment-card" onclick="startExperiment('ABX_rising_high.html')">
                 <div class="experiment-icon">📊</div>
                 <h3>动态音高辨别-高升调</h3>
                 <span class="badge rising">Rising Tone</span>
                 <p>测试对高音区升调变化的敏感度。评估您在高频范围内对音高上升的感知精度。</p>
-                <a href="ABX_rising_high.html" class="btn" onclick="event.stopPropagation()">开始实验</a>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_rising_high.html')">开始实验</button>
             </div>
 
-            <div class="experiment-card" onclick="window.location.href='ABX_falling_low.html'">
+            <div class="experiment-card" onclick="startExperiment('ABX_falling_low.html')">
                 <div class="experiment-icon">📉</div>
                 <h3>动态音高辨别-低降调</h3>
                 <span class="badge falling">Falling Tone</span>
                 <p>测试对低音区降调变化的敏感度。通过调节调制窗口时长，评估您对音高下降的辨别能力。</p>
-                <a href="ABX_falling_low.html" class="btn" onclick="event.stopPropagation()">开始实验</a>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_falling_low.html')">开始实验</button>
             </div>
 
-            <div class="experiment-card" onclick="window.location.href='ABX_falling_high.html'">
+            <div class="experiment-card" onclick="startExperiment('ABX_falling_high.html')">
                 <div class="experiment-icon">📋</div>
                 <h3>动态音高辨别-高降调</h3>
                 <span class="badge falling">Falling Tone</span>
                 <p>测试对低音区平调变化的敏感度。评估您在高频范围内对音高下降的感知精度。</p>
-                <a href="ABX_falling_high.html" class="btn" onclick="event.stopPropagation()">开始实验</a>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_falling_high.html')">开始实验</button>
             </div>
 
-            <div class="experiment-card" onclick="window.location.href='ABX_level_high.html'">
+            <div class="experiment-card" onclick="startExperiment('ABX_level_high.html')">
                 <div class="experiment-icon">📶</div>
                 <h3>静态音高辨别-高调域</h3>
                 <span class="badge rising">Rising Tone</span>
                 <p>测试对高音区平调变化的敏感度。评估您在高频范围内对音高的辨别能力。</p>
-                <a href="ABX_level_high.html" class="btn" onclick="event.stopPropagation()">开始实验</a>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_level_high.html')">开始实验</button>
             </div>
 
-            <div class="experiment-card" onclick="window.location.href='ABX_level_low.html'">
+            <div class="experiment-card" onclick="startExperiment('ABX_level_low.html')">
                 <div class="experiment-icon">📐</div>
                 <h3>静态音高辨别-低调域</h3>
                 <span class="badge falling">Falling Tone</span>
                 <p>测试对低音区平调变化的敏感度。评估您在低频范围内对音高的辨别能力。</p>
-                <a href="ABX_level_low.html" class="btn" onclick="event.stopPropagation()">开始实验</a>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_level_low.html')">开始实验</button>
             </div>
         </div>
 
@@ -348,7 +430,43 @@
         // 可以在这里添加文件存在性检查逻辑
         console.log('实验系统已加载');
         console.log('可用实验:', experimentFiles);
+        
+        // 尝试从 localStorage 恢复被试ID
+        const savedId = localStorage.getItem('participantId');
+        if (savedId) {
+            document.getElementById('participantId').value = savedId;
+        }
+        
+        // 监听输入框变化，清除错误提示
+        document.getElementById('participantId').addEventListener('input', function() {
+            this.classList.remove('error');
+            document.getElementById('errorMessage').classList.remove('show');
+        });
     });
+    
+    /**
+     * 验证被试ID并跳转到实验页面
+     * @param {string} experimentUrl - 实验页面URL
+     */
+    function startExperiment(experimentUrl) {
+        const participantId = document.getElementById('participantId').value.trim();
+        const inputElement = document.getElementById('participantId');
+        const errorElement = document.getElementById('errorMessage');
+        
+        // 验证被试ID
+        if (!participantId) {
+            inputElement.classList.add('error');
+            errorElement.classList.add('show');
+            inputElement.focus();
+            return false;
+        }
+        
+        // 保存被试ID到 localStorage
+        localStorage.setItem('participantId', participantId);
+        
+        // 跳转到实验页面，通过URL参数传递被试ID
+        window.location.href = experimentUrl + '?participantId=' + encodeURIComponent(participantId);
+    }
 </script>
 </body>
 </html>
