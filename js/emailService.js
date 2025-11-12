@@ -54,14 +54,19 @@ if (typeof window !== 'undefined') {
  * 生成 CSV 内容（从实验数据生成）
  * @param {Array} trialRecords - 试验记录数组
  * @param {Object} results - 实验结果对象
- * @param {Object} experimentInfo - 实验信息
+ * @param {Object} experimentInfo - 实验信息（包含startTime, participantId等）
  * @returns {string} CSV 格式的字符串
  */
 function generateCSVContent(trialRecords, results, experimentInfo) {
-    // 添加被试ID到CSV开头
+    // 添加被试ID和实验开始时间到CSV开头
     const csvRows = [];
     if (experimentInfo.participantId) {
         csvRows.push("Participant ID: " + experimentInfo.participantId);
+    }
+    if (experimentInfo.startTime) {
+        csvRows.push("Experiment Start Time: " + experimentInfo.startTime);
+    }
+    if (experimentInfo.participantId || experimentInfo.startTime) {
         csvRows.push("");
     }
     
@@ -134,6 +139,9 @@ function generateCSVContent(trialRecords, results, experimentInfo) {
                 csvRows.push("Participant ID," + experimentInfo.participantId);
             }
             csvRows.push("Experiment Type," + (experimentInfo.type || 'N/A'));
+            if (experimentInfo.startTime) {
+                csvRows.push("Start Time," + experimentInfo.startTime);
+            }
             csvRows.push("Completion Date," + (experimentInfo.completionDate || new Date().toISOString()));
             csvRows.push("Total Trials," + (experimentInfo.totalTrials || trialRecords.length));
             csvRows.push("Total Reversals," + (experimentInfo.totalReversals || 'N/A'));
@@ -161,6 +169,9 @@ function csvToBase64(csvContent) {
  * @param {Array} params.trialRecords - 试验记录数组
  * @param {Object} params.results - 实验结果对象
  * @param {Object} params.experimentInfo - 实验信息
+ * @param {string} params.experimentInfo.startTime - 实验开始时间
+ * @param {string} params.experimentInfo.completionDate - 实验完成时间
+ * @param {string} params.experimentInfo.participantId - 被试ID
  * @param {Function} params.onSuccess - 成功回调函数
  * @param {Function} params.onError - 错误回调函数
  */
@@ -196,6 +207,7 @@ function sendExperimentResults(params) {
     const templateParams = {
         participant_id: experimentInfo.participantId || 'N/A',
         experiment_type: experimentInfo.type || 'Pitch Training Experiment',
+        start_time: experimentInfo.startTime || 'N/A',
         completion_date: experimentInfo.completionDate || new Date().toLocaleString('zh-CN'),
         total_trials: experimentInfo.totalTrials || trialRecords.length,
         total_reversals: experimentInfo.totalReversals || 'N/A',
@@ -283,6 +295,7 @@ function sendCurrentExperimentResults() {
     const experimentInfo = {
         participantId: participantId,
         type: document.querySelector('.training-info')?.textContent || 'Pitch Training',
+        startTime: window.experimentStartTime || localStorage.getItem('experimentStartTime') || 'N/A',
         completionDate: new Date().toLocaleString('zh-CN'),
         totalTrials: window.numberOfIterations || trialRecords.length,
         totalReversals: window.NumberOfReversals || 0,
