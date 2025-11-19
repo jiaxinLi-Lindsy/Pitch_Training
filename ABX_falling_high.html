@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>PLOYU-Peng's Lab: Pitch Sensitivity Training</title>
+    <title>POLYU-Peng's Lab: Pitch Sensitivity Training</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -1369,6 +1369,14 @@ function playABXSequence(xIsStandard) {
 
 function start_onclick() {
     logDebug("Starting experiment");
+    
+    // 记录实验开始时间
+    if (!window.experimentStartTime) {
+        const startTime = new Date().toLocaleString('zh-CN');
+        window.experimentStartTime = startTime;
+        localStorage.setItem('experimentStartTime', startTime);
+        logDebug("Experiment start time recorded: " + startTime);
+    }
     
     if (!audioUnlocked) {
         unlockAudioContext();
