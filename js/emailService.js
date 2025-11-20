@@ -200,8 +200,8 @@ function sendExperimentResults(params) {
     
     // 生成文件名（包含被试ID和时间戳）
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-    const participantPrefix = experimentInfo.participantId ? `${experimentInfo.participantId}_` : '';
-    const fileName = `${participantPrefix}experiment_results_${experimentInfo.type || 'data'}_${timestamp}.csv`;
+    const participantPrefix = experimentInfo.participantId ? `${experimentInfo.participantId}` : '';
+    const fileName = `${experimentInfo.participantId}_${experimentInfo.type}.csv`;
     
     // 准备邮件参数
     const templateParams = {
