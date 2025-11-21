@@ -287,7 +287,6 @@
 
         .rising { background: #3498db; }
         .falling { background: #e74c3c; }
-        .simple { background: #2ecc71; }
     </style>
 </head>
 <body>
@@ -323,12 +322,36 @@
         </div>
 
         <div class="experiments-grid">
-            <div class="experiment-card" onclick="startExperiment('ABX_level_high_v2.html')">
-                <div class="experiment-icon">🎯</div>
-                <h3>靜態音高辨別-高調域（簡易版）</h3>
-                <span class="badge simple">Level High Lite</span>
-                <p>簡化版高調域平調辨別訓練，適合入門或快速測試，提供較寬鬆的自適應參數。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_level_high_v2.html')">開始實驗</button>
+            <div class="experiment-card" onclick="startExperiment('ABX_rising_low.html')">
+                <div class="experiment-icon">📈</div>
+                <h3>動態音高辨別-低升調</h3>
+                <span class="badge rising">Rising Low</span>
+                <p>測試對低音區升調變化的敏感度。通過調節調製窗口時長，評估您對緩慢音高上升的辨別能力。</p>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_rising_low.html')">開始實驗</button>
+            </div>
+
+            <div class="experiment-card" onclick="startExperiment('ABX_rising_high.html')">
+                <div class="experiment-icon">📊</div>
+                <h3>動態音高辨別-高升調</h3>
+                <span class="badge rising">Rising High</span>
+                <p>測試對高音區升調變化的敏感度。評估您在高頻範圍內對音高上升的感知精度。</p>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_rising_high.html')">開始實驗</button>
+            </div>
+
+            <div class="experiment-card" onclick="startExperiment('ABX_falling_low.html')">
+                <div class="experiment-icon">📉</div>
+                <h3>動態音高辨別-低降調</h3>
+                <span class="badge falling">Falling Low</span>
+                <p>測試對低音區降調變化的敏感度。通過調節調製窗口時長，評估您對音高下降的辨別能力。</p>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_falling_low.html')">開始實驗</button>
+            </div>
+
+            <div class="experiment-card" onclick="startExperiment('ABX_falling_high.html')">
+                <div class="experiment-icon">📋</div>
+                <h3>動態音高辨別-高降調</h3>
+                <span class="badge falling">Falling High</span>
+                <p>測試對低音區平調變化的敏感度。評估您在高頻範圍內對音高下降的感知精度。</p>
+                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_falling_high.html')">開始實驗</button>
             </div>
 
             <div class="experiment-card" onclick="startExperiment('ABX_level_high.html')">
@@ -345,38 +368,6 @@
                 <span class="badge falling">Level Low</span>
                 <p>測試對低音區平調變化的敏感度。評估您在低頻範圍內對音高的辨別能力。</p>
                 <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_level_low.html')">開始實驗</button>
-            </div>
-
-            <div class="experiment-card" onclick="startExperiment('ABX_rising_high.html')">
-                <div class="experiment-icon">📊</div>
-                <h3>動態音高辨別-高升調</h3>
-                <span class="badge rising">Rising High</span>
-                <p>測試對高音區升調變化的敏感度。評估您在高頻範圍內對音高上升的感知精度。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_rising_high.html')">開始實驗</button>
-            </div>
-
-            <div class="experiment-card" onclick="startExperiment('ABX_rising_low.html')">
-                <div class="experiment-icon">📈</div>
-                <h3>動態音高辨別-低升調</h3>
-                <span class="badge rising">Rising Low</span>
-                <p>測試對低音區升調變化的敏感度。通過調節調製窗口時長，評估您對緩慢音高上升的辨別能力。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_rising_low.html')">開始實驗</button>
-            </div>
-
-            <div class="experiment-card" onclick="startExperiment('ABX_falling_high.html')">
-                <div class="experiment-icon">📋</div>
-                <h3>動態音高辨別-高降調</h3>
-                <span class="badge falling">Falling High</span>
-                <p>測試對低音區平調變化的敏感度。評估您在高頻範圍內對音高下降的感知精度。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_falling_high.html')">開始實驗</button>
-            </div>
-
-            <div class="experiment-card" onclick="startExperiment('ABX_falling_low.html')">
-                <div class="experiment-icon">📉</div>
-                <h3>動態音高辨別-低降調</h3>
-                <span class="badge falling">Falling Low</span>
-                <p>測試對低音區降調變化的敏感度。通過調節調製窗口時長，評估您對音高下降的辨別能力。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_falling_low.html')">開始實驗</button>
             </div>
         </div>
 
@@ -405,12 +396,13 @@
     </div>
 
     <div class="footer">
-        <p>&copy; 2024 PLOYU-Peng's Lab | Pitch Sensitivity Training System</p>
+        <p>&copy; 2024 POLYU-Peng's Lab | Pitch Sensitivity Training System</p>
         <p style="margin-top: 5px; font-size: 12px;">Powered by Adaptive Threshold Experiment Technology</p>
     </div>
 </div>
 
 <script>
+    // 页面加载动画
     document.addEventListener('DOMContentLoaded', function() {
         const cards = document.querySelectorAll('.experiment-card');
         cards.forEach((card, index) => {
@@ -424,36 +416,44 @@
         });
     });
 
+    // 检查实验文件是否存在
     window.addEventListener('load', function() {
         const experimentFiles = [
-            'ABX_level_high_v2.html',
-            'ABX_level_high.html',
-            'ABX_level_low.html',
-            'ABX_rising_high.html',
             'ABX_rising_low.html',
+            'ABX_rising_high.html',
+            'ABX_falling_low.html',
             'ABX_falling_high.html',
-            'ABX_falling_low.html'
+            'ABX_rising_mid.html',
+            'ABX_falling_mid.html'
         ];
 
+        // 可以在这里添加文件存在性检查逻辑
         console.log('實驗系統已加載');
         console.log('可用實驗:', experimentFiles);
         
+        // 嘗試從 localStorage 恢復被試ID
         const savedId = localStorage.getItem('participantId');
         if (savedId) {
             document.getElementById('participantId').value = savedId;
         }
         
+        // 監聽輸入框變化，清除錯誤提示
         document.getElementById('participantId').addEventListener('input', function() {
             this.classList.remove('error');
             document.getElementById('errorMessage').classList.remove('show');
         });
     });
     
+    /**
+     * 驗證被試ID並跳轉到實驗頁面
+     * @param {string} experimentUrl - 實驗頁面URL
+     */
     function startExperiment(experimentUrl) {
         const participantId = document.getElementById('participantId').value.trim();
         const inputElement = document.getElementById('participantId');
         const errorElement = document.getElementById('errorMessage');
         
+        // 驗證被試ID
         if (!participantId) {
             inputElement.classList.add('error');
             errorElement.classList.add('show');
@@ -461,7 +461,10 @@
             return false;
         }
         
+        // 保存被試ID到 localStorage
         localStorage.setItem('participantId', participantId);
+        
+        // 跳轉到實驗頁面，通過URL參數傳遞被試ID
         window.location.href = experimentUrl + '?participantId=' + encodeURIComponent(participantId);
     }
 </script>
