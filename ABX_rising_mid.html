@@ -1539,7 +1539,7 @@ function processAnswer(Response) {
 
 function changeLevel(whichWay) {
     var oldLevel = currentLevel;
-    var stepSize = NumberOfReversals < 4 ? 2 : 1;
+    var stepSize = 1;
     
     if (whichWay == DECREASING) {
         currentLevel = Math.min(UPPERLIMIT, currentLevel + stepSize);
