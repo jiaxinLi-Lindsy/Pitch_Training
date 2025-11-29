@@ -138,26 +138,26 @@
             margin: 0 auto;
         }
 
-        .experiments-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
+        .start-experiment-section {
+            display: flex;
+            justify-content: center;
             margin-top: 30px;
         }
 
-        .experiment-card {
+        .experiment-card-single {
             background: #f8f9fa;
             border-radius: 15px;
-            padding: 30px;
+            padding: 40px;
             text-align: center;
             transition: all 0.3s ease;
-            border: 2px solid transparent;
-            cursor: pointer;
+            border: 2px solid #667eea;
             position: relative;
             overflow: hidden;
+            max-width: 600px;
+            width: 100%;
         }
 
-        .experiment-card::before {
+        .experiment-card-single::before {
             content: '';
             position: absolute;
             top: 0;
@@ -165,18 +165,20 @@
             width: 100%;
             height: 5px;
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
         }
 
-        .experiment-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            border-color: #667eea;
+        .experiment-list {
+            list-style: none;
+            padding: 20px 0;
+            text-align: left;
+            display: inline-block;
         }
 
-        .experiment-card:hover::before {
-            transform: scaleX(1);
+        .experiment-list li {
+            padding: 10px 0;
+            color: #555;
+            font-size: 16px;
+            line-height: 1.8;
         }
 
         .experiment-icon {
@@ -184,20 +186,26 @@
             margin-bottom: 15px;
         }
 
-        .experiment-card h3 {
+        .experiment-card-single h3 {
             color: #333;
-            font-size: 22px;
-            margin-bottom: 10px;
+            font-size: 26px;
+            margin-bottom: 15px;
         }
 
-        .experiment-card p {
+        .experiment-card-single p {
             color: #666;
-            font-size: 14px;
-            margin-bottom: 20px;
-            line-height: 1.5;
+            font-size: 15px;
+            margin-bottom: 10px;
+            line-height: 1.6;
         }
 
-        .experiment-card .btn {
+        .btn-large {
+            padding: 15px 50px !important;
+            font-size: 18px !important;
+            margin-top: 20px;
+        }
+
+        .btn {
             display: inline-block;
             padding: 12px 30px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -211,12 +219,10 @@
             font-size: 16px;
         }
 
-        .experiment-card .btn:hover {
+        .btn:hover {
             transform: scale(1.05);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
-
-        .info-section {
             background: #e8f4f8;
             border-radius: 15px;
             padding: 30px;
@@ -256,7 +262,7 @@
             border-top: 1px solid #eee;
         }
 
-        @media (max-width: 768px) {
+            @media (max-width: 768px) {
             .header h1 {
                 font-size: 28px;
             }
@@ -265,12 +271,17 @@
                 font-size: 16px;
             }
 
-            .experiments-grid {
-                grid-template-columns: 1fr;
-            }
-
             .content {
                 padding: 20px;
+            }
+
+            .experiment-card-single {
+                padding: 25px;
+            }
+
+            .btn-large {
+                padding: 12px 35px !important;
+                font-size: 16px !important;
             }
         }
 
@@ -319,32 +330,34 @@
                     autocomplete="off"
                 >
             </div>
-            <div class="error-message" id="errorMessage">⚠️ 請輸入被試ID後再開始實驗</div>
+            <div class="id-input-group" style="margin-top: 15px;">
+                <label for="sessionNumber">訓練場次：</label>
+                <input 
+                    type="text" 
+                    id="sessionNumber" 
+                    placeholder="請輸入訓練場次（必填）" 
+                    maxlength="20"
+                    autocomplete="off"
+                >
+            </div>
+            <div class="error-message" id="errorMessage">⚠️ 請輸入被試ID和訓練場次後再開始實驗</div>
         </div>
 
-        <div class="experiments-grid">
-            <div class="experiment-card" onclick="startExperiment('ABX_level_mid.html')">
-                <div class="experiment-icon">📶</div>
-                <h3>靜態音高辨別-調域</h3>
-                <span class="badge level">Level Mid</span>
-                <p>測試對中音區平調變化的敏感度。評估您在中頻範圍內對音高的辨別能力。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_level_mid.html')">開始實驗</button>
-            </div>
-
-            <div class="experiment-card" onclick="startExperiment('ABX_rising_mid.html')">
-                <div class="experiment-icon">📈</div>
-                <h3>動態音高辨別-升調</h3>
-                <span class="badge rising">Rising Mid</span>
-                <p>測試對中音區升調變化的敏感度。評估您在中頻範圍內對音高上升的感知精度。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_rising_mid.html')">開始實驗</button>
-            </div>
-
-            <div class="experiment-card" onclick="startExperiment('ABX_falling_mid.html')">
-                <div class="experiment-icon">📉</div>
-                <h3>動態音高辨別-降調</h3>
-                <span class="badge falling">Falling Mid</span>
-                <p>測試對中音區降調變化的敏感度。通過調節調製窗口時長，評估您對音高下降的辨別能力。</p>
-                <button class="btn" onclick="event.stopPropagation(); startExperiment('ABX_falling_mid.html')">開始實驗</button>
+        <div class="start-experiment-section">
+            <div class="experiment-card-single">
+                <div class="experiment-icon">🎯</div>
+                <h3>開始全部實驗</h3>
+                <p>您將按照隨機順序完成以下三個實驗：</p>
+                <ul class="experiment-list">
+                    <li>📶 靜態音高辨別-調域 (Level Mid)</li>
+                    <li>📈 動態音高辨別-升調 (Rising Mid)</li>
+                    <li>📉 動態音高辨別-降調 (Falling Mid)</li>
+                </ul>
+                <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                    點擊下方按鈕開始實驗，系統將自動為您安排實驗順序。<br>
+                    每完成一個實驗後，將自動進入下一個實驗。
+                </p>
+                <button class="btn btn-large" onclick="startExperimentSequence()">🚀 開始實驗</button>
             </div>
         </div>
 
@@ -380,16 +393,16 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const cards = document.querySelectorAll('.experiment-card');
-        cards.forEach((card, index) => {
+        const card = document.querySelector('.experiment-card-single');
+        if (card) {
             card.style.opacity = '0';
             card.style.transform = 'translateY(20px)';
             setTimeout(() => {
                 card.style.transition = 'all 0.5s ease';
                 card.style.opacity = '1';
                 card.style.transform = 'translateY(0)';
-            }, index * 100);
-        });
+            }, 100);
+        }
     });
 
     window.addEventListener('load', function() {
@@ -407,26 +420,94 @@
             document.getElementById('participantId').value = savedId;
         }
         
+        const savedSession = localStorage.getItem('sessionNumber');
+        if (savedSession) {
+            document.getElementById('sessionNumber').value = savedSession;
+        }
+        
         document.getElementById('participantId').addEventListener('input', function() {
+            this.classList.remove('error');
+            document.getElementById('errorMessage').classList.remove('show');
+        });
+        
+        document.getElementById('sessionNumber').addEventListener('input', function() {
             this.classList.remove('error');
             document.getElementById('errorMessage').classList.remove('show');
         });
     });
     
-    function startExperiment(experimentUrl) {
+    // 生成隨機不重複的實驗序列
+    function generateRandomSequence(length) {
+        const sequence = Array.from({length: length}, (_, i) => i);
+        // Fisher-Yates 洗牌算法
+        for (let i = sequence.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [sequence[i], sequence[j]] = [sequence[j], sequence[i]];
+        }
+        return sequence;
+    }
+    
+    // 開始實驗序列
+    function startExperimentSequence() {
         const participantId = document.getElementById('participantId').value.trim();
-        const inputElement = document.getElementById('participantId');
+        const sessionNumber = document.getElementById('sessionNumber').value.trim();
+        const inputElementId = document.getElementById('participantId');
+        const inputElementSession = document.getElementById('sessionNumber');
         const errorElement = document.getElementById('errorMessage');
         
-        if (!participantId) {
-            inputElement.classList.add('error');
+        if (!participantId || !sessionNumber) {
+            if (!participantId) {
+                inputElementId.classList.add('error');
+            }
+            if (!sessionNumber) {
+                inputElementSession.classList.add('error');
+            }
             errorElement.classList.add('show');
-            inputElement.focus();
+            if (!participantId) {
+                inputElementId.focus();
+            } else {
+                inputElementSession.focus();
+            }
             return false;
         }
         
+        // 保存被試ID和訓練場次
         localStorage.setItem('participantId', participantId);
-        window.location.href = experimentUrl + '?participantId=' + encodeURIComponent(participantId);
+        localStorage.setItem('sessionNumber', sessionNumber);
+        
+        // 實驗列表
+        const experimentFiles = [
+            'ABX_level_mid.html',
+            'ABX_rising_mid.html',
+            'ABX_falling_mid.html'
+        ];
+        
+        // 生成隨機序列
+        const sequence = generateRandomSequence(experimentFiles.length);
+        
+        // 保存實驗序列和當前進度
+        localStorage.setItem('experimentSequence', JSON.stringify(sequence));
+        localStorage.setItem('experimentFiles', JSON.stringify(experimentFiles));
+        localStorage.setItem('currentExperimentIndex', '0');
+        
+        console.log('生成實驗序列:', sequence);
+        console.log('實驗順序:', sequence.map(i => experimentFiles[i]));
+        console.log('被試ID:', participantId);
+        console.log('訓練場次:', sessionNumber);
+        
+        // 跳轉到第一個實驗
+        const firstExperimentIndex = sequence[0];
+        const firstExperimentUrl = experimentFiles[firstExperimentIndex];
+        
+        window.location.href = firstExperimentUrl + 
+            '?participantId=' + encodeURIComponent(participantId) +
+            '&sessionNumber=' + encodeURIComponent(sessionNumber) +
+            '&sequenceIndex=0';
+    }
+    
+    // 舊版本兼容性函數（如果有其他地方調用）
+    function startExperiment(experimentUrl) {
+        startExperimentSequence();
     }
 </script>
 </body>

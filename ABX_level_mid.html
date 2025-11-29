@@ -444,6 +444,21 @@
             margin-top: 10px;
             font-weight: bold;
         }
+        .experiment-progress {
+            text-align: center;
+            font-size: 16px;
+            color: #2c3e50;
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #e8f4f8;
+            border-radius: 5px;
+            display: inline-block;
+            font-weight: 600;
+        }
+        .experiment-progress span {
+            color: #667eea;
+            font-weight: bold;
+        }
     </style>
     
     <!-- EmailJS Library -->
@@ -458,6 +473,9 @@
         <div class="header">
             <img src="Media/animation.gif" alt="Experiment animation">
             <div class="training-info">Level Tone Discrimination (ABX)</div>
+            <div id="experimentProgress" class="experiment-progress" style="display: none;">
+                實驗進度: <span id="progressText">1/3</span>
+            </div>
             <div class="instruction-text">請判斷第三個音聽起來更像第一個還是第二個音</div>
         </div>
 
@@ -1975,7 +1993,33 @@ window.onload = function() {
     
     document.getElementById('showDebug').checked = true;
     toggleDebug();
+    
+    // 显示实验进度
+    displayExperimentProgress();
 };
+
+/**
+ * 显示实验进度信息
+ */
+function displayExperimentProgress() {
+    const experimentSequence = JSON.parse(localStorage.getItem('experimentSequence') || '[]');
+    const currentIndex = parseInt(localStorage.getItem('currentExperimentIndex') || '0');
+    
+    if (experimentSequence.length > 0) {
+        const totalExperiments = experimentSequence.length;
+        const currentNumber = currentIndex + 1;
+        
+        const progressElement = document.getElementById('experimentProgress');
+        const progressText = document.getElementById('progressText');
+        
+        if (progressElement && progressText) {
+            progressText.textContent = `${currentNumber}/${totalExperiments}`;
+            progressElement.style.display = 'inline-block';
+            
+            logDebug(`Displaying experiment progress: ${currentNumber}/${totalExperiments}`);
+        }
+    }
+}
 </script>
 </body>
 </html>

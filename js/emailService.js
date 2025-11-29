@@ -58,15 +58,18 @@ if (typeof window !== 'undefined') {
  * @returns {string} CSV 格式的字符串
  */
 function generateCSVContent(trialRecords, results, experimentInfo) {
-    // 添加被试ID和实验开始时间到CSV开头
+    // 添加被试ID、训练场次和实验开始时间到CSV开头
     const csvRows = [];
     if (experimentInfo.participantId) {
         csvRows.push("Participant ID: " + experimentInfo.participantId);
     }
+    if (experimentInfo.sessionNumber) {
+        csvRows.push("Session Number: " + experimentInfo.sessionNumber);
+    }
     if (experimentInfo.startTime) {
         csvRows.push("Experiment Start Time: " + experimentInfo.startTime);
     }
-    if (experimentInfo.participantId || experimentInfo.startTime) {
+    if (experimentInfo.participantId || experimentInfo.sessionNumber || experimentInfo.startTime) {
         csvRows.push("");
     }
     
@@ -138,6 +141,9 @@ function generateCSVContent(trialRecords, results, experimentInfo) {
             if (experimentInfo.participantId) {
                 csvRows.push("Participant ID," + experimentInfo.participantId);
             }
+            if (experimentInfo.sessionNumber) {
+                csvRows.push("Session Number," + experimentInfo.sessionNumber);
+            }
             csvRows.push("Experiment Type," + (experimentInfo.type || 'N/A'));
             if (experimentInfo.startTime) {
                 csvRows.push("Start Time," + experimentInfo.startTime);
@@ -172,6 +178,7 @@ function csvToBase64(csvContent) {
  * @param {string} params.experimentInfo.startTime - 实验开始时间
  * @param {string} params.experimentInfo.completionDate - 实验完成时间
  * @param {string} params.experimentInfo.participantId - 被试ID
+ * @param {string} params.experimentInfo.sessionNumber - 训练场次
  * @param {Function} params.onSuccess - 成功回调函数
  * @param {Function} params.onError - 错误回调函数
  */
@@ -198,14 +205,16 @@ function sendExperimentResults(params) {
     const csvContent = generateCSVContent(trialRecords, results, experimentInfo);
     const csvBase64 = csvToBase64(csvContent);
     
-    // 生成文件名（包含被试ID和时间戳）
+    // 生成文件名（包含被试ID、训练场次和时间戳）
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
     const participantPrefix = experimentInfo.participantId ? `${experimentInfo.participantId}` : '';
-    const fileName = `${experimentInfo.participantId}_${experimentInfo.type}.csv`;
+    const sessionPrefix = experimentInfo.sessionNumber ? `_Session${experimentInfo.sessionNumber}` : '';
+    const fileName = `${experimentInfo.participantId}${sessionPrefix}_${experimentInfo.type}.csv`;
     
     // 准备邮件参数
     const templateParams = {
         participant_id: experimentInfo.participantId || 'N/A',
+        session_number: experimentInfo.sessionNumber || 'N/A',
         experiment_type: experimentInfo.type || 'Pitch Training Experiment',
         start_time: experimentInfo.startTime || 'N/A',
         completion_date: experimentInfo.completionDate || new Date().toLocaleString('zh-CN'),
@@ -289,11 +298,13 @@ function sendCurrentExperimentResults() {
         thresholdWindowPercent: window.thresholdWindowPercent
     };
     
-    // 获取被试ID（从URL参数或localStorage）
+    // 获取被试ID和训练场次（从URL参数或localStorage）
     const participantId = getParticipantId();
+    const sessionNumber = getSessionNumber();
     
     const experimentInfo = {
         participantId: participantId,
+        sessionNumber: sessionNumber,
         type: document.querySelector('.training-info')?.textContent || 'Pitch Training',
         startTime: window.experimentStartTime || localStorage.getItem('experimentStartTime') || 'N/A',
         completionDate: new Date().toLocaleString('zh-CN'),
@@ -309,11 +320,74 @@ function sendCurrentExperimentResults() {
         experimentInfo: experimentInfo,
         onSuccess: function(response) {
             alert('实验结果已成功发送到指定邮箱！');
+            
+            // 检查是否需要跳转到下一个实验
+            checkAndNavigateToNextExperiment();
         },
         onError: function(error) {
             alert('发送邮件失败：' + error.message + '\n请检查网络连接或联系管理员。');
         }
     });
+}
+
+/**
+ * 检查并跳转到下一个实验
+ * 如果有下一个实验，跳转到该实验页面
+ * 如果是最后一个实验，显示完成提示并返回首页
+ */
+function checkAndNavigateToNextExperiment() {
+    // 从localStorage获取实验序列信息
+    const experimentSequence = JSON.parse(localStorage.getItem('experimentSequence') || '[]');
+    const experimentFiles = JSON.parse(localStorage.getItem('experimentFiles') || '[]');
+    const currentIndex = parseInt(localStorage.getItem('currentExperimentIndex') || '0');
+    const participantId = localStorage.getItem('participantId') || '';
+    const sessionNumber = localStorage.getItem('sessionNumber') || '';
+    
+    // 检查是否在实验序列中
+    if (experimentSequence.length === 0 || experimentFiles.length === 0) {
+        console.log('[Navigation] No experiment sequence found, staying on current page');
+        return;
+    }
+    
+    // 计算下一个实验的索引
+    const nextIndex = currentIndex + 1;
+    
+    console.log(`[Navigation] Current index: ${currentIndex}, Total experiments: ${experimentSequence.length}`);
+    
+    // 检查是否还有下一个实验
+    if (nextIndex < experimentSequence.length) {
+        // 还有下一个实验
+        const nextExperimentFileIndex = experimentSequence[nextIndex];
+        const nextExperimentFile = experimentFiles[nextExperimentFileIndex];
+        
+        console.log(`[Navigation] Moving to next experiment: ${nextExperimentFile}`);
+        
+        // 更新当前实验索引
+        localStorage.setItem('currentExperimentIndex', nextIndex.toString());
+        
+        // 延迟1秒后跳转，让用户看到成功消息
+        setTimeout(function() {
+            window.location.href = nextExperimentFile + 
+                '?participantId=' + encodeURIComponent(participantId) +
+                '&sessionNumber=' + encodeURIComponent(sessionNumber) +
+                '&sequenceIndex=' + nextIndex;
+        }, 1500);
+        
+    } else {
+        // 所有实验已完成
+        console.log('[Navigation] All experiments completed!');
+        
+        // 清理localStorage中的实验序列信息
+        localStorage.removeItem('experimentSequence');
+        localStorage.removeItem('experimentFiles');
+        localStorage.removeItem('currentExperimentIndex');
+        
+        // 显示完成消息并返回首页
+        setTimeout(function() {
+            alert('🎉 恭喜！您已完成所有实验！\n\n感谢您的参与！');
+            window.location.href = 'index.html';
+        }, 1500);
+    }
 }
 
 /**
@@ -365,6 +439,28 @@ function getParticipantId() {
     }
     
     return participantId || 'Unknown';
+}
+
+/**
+ * 辅助函数：获取训练场次
+ * 优先从URL参数获取，其次从localStorage获取
+ */
+function getSessionNumber() {
+    // 从URL参数获取
+    const urlParams = new URLSearchParams(window.location.search);
+    let sessionNumber = urlParams.get('sessionNumber');
+    
+    // 如果URL中没有，尝试从localStorage获取
+    if (!sessionNumber) {
+        sessionNumber = localStorage.getItem('sessionNumber');
+    }
+    
+    // 如果获取到了，保存到localStorage（用于页面刷新后保持）
+    if (sessionNumber) {
+        localStorage.setItem('sessionNumber', sessionNumber);
+    }
+    
+    return sessionNumber || 'Unknown';
 }
 
 // 导出函数（如果使用模块化）
