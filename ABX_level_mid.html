@@ -1847,6 +1847,11 @@ function testEmailSending() {
 }
 
 function exportToCSV() {
+    // 获取 ParticipantID 和 Session
+    const urlParams = new URLSearchParams(window.location.search);
+    const participantId = urlParams.get('participantId') || localStorage.getItem('participantId') || 'N/A';
+    const sessionNumber = urlParams.get('sessionNumber') || localStorage.getItem('sessionNumber') || 'N/A';
+    
     const headers = [
         "Trial Number", 
         "Timestamp", 
@@ -1863,6 +1868,12 @@ function exportToCSV() {
     ];
     
     const csvRows = [];
+    
+    // 添加被试信息
+    csvRows.push("Participant ID: " + participantId);
+    csvRows.push("Session Number: " + sessionNumber);
+    csvRows.push("");
+    
     csvRows.push(headers.join(","));
     
     trialRecords.forEach(function(trial) {
@@ -1935,12 +1946,115 @@ function exportToCSV() {
     const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    // 文件名格式：Session{number}_{participantId}_{ExperimentName}
+    const experimentName = "Level_Tone_Discrimination_ABX";
+    const fileName = `Session${sessionNumber}_${participantId}_${experimentName}.csv`;
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "pitch_discrimination_ABX_data_" + timestamp + ".csv");
+    link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// 为邮件发送提供一个获取CSV内容的函数
+function generateCSVContentForEmail() {
+    // 获取 ParticipantID 和 Session
+    const urlParams = new URLSearchParams(window.location.search);
+    const participantId = urlParams.get('participantId') || localStorage.getItem('participantId') || 'N/A';
+    const sessionNumber = urlParams.get('sessionNumber') || localStorage.getItem('sessionNumber') || 'N/A';
+    
+    const headers = [
+        "Trial Number", 
+        "Timestamp", 
+        "Direction", 
+        "Difficulty Level", 
+        "Semitone Value", 
+        "Standard Position",
+        "User Response", 
+        "Correct Response", 
+        "Is Correct", 
+        "Reaction Time (ms)", 
+        "Is Reversal",
+        "Step Direction"
+    ];
+    
+    const csvRows = [];
+    
+    // 添加被试信息
+    csvRows.push("Participant ID: " + participantId);
+    csvRows.push("Session Number: " + sessionNumber);
+    csvRows.push("");
+    
+    csvRows.push(headers.join(","));
+    
+    trialRecords.forEach(function(trial) {
+        const row = [
+            trial.trialNumber,
+            '"' + trial.timestamp + '"',
+            trial.direction,
+            trial.difficultyLevel,
+            trial.semitoneValue,
+            trial.standardPosition,
+            '"' + trial.userResponse + '"',
+            '"' + trial.correctResponse + '"',
+            trial.isCorrect ? "1" : "0",
+            trial.reactionTime,
+            trial.isReversal ? "1" : "0",
+            '"' + trial.stepDirection + '"'
+        ];
+        csvRows.push(row.join(","));
+    });
+    
+    csvRows.push("\nRESULTS SUMMARY");
+    csvRows.push("\nThreshold Results (semitones)");
+    csvRows.push("Direction,Threshold,Standard Deviation,Assessment");
+    
+    const hasHigherData = NumberOfReversals[0] >= MINIMUMREVERSALS;
+    const hasLowerData = NumberOfReversals[1] >= MINIMUMREVERSALS;
+    
+    csvRows.push("Higher," + 
+        (hasHigherData ? sentAverage[0].toFixed(4) : "Insufficient data") + "," + 
+        (hasHigherData ? sentStdev[0].toFixed(4) : "N/A") + "," + 
+        (hasHigherData ? getThresholdAssessment(sentAverage[0]) : "N/A"));
+    
+    csvRows.push("Lower," + 
+        (hasLowerData ? sentAverage[1].toFixed(4) : "Insufficient data") + "," + 
+        (hasLowerData ? sentStdev[1].toFixed(4) : "N/A") + "," + 
+        (hasLowerData ? getThresholdAssessment(sentAverage[1]) : "N/A"));
+    
+    if (hasHigherData && hasLowerData) {
+        const avgThreshold = (sentAverage[0] + sentAverage[1]) / 2;
+        const combinedVariance = (Math.pow(sentStdev[0], 2) + Math.pow(sentStdev[1], 2)) / 2;
+        const combinedSD = Math.sqrt(combinedVariance).toFixed(4);
+        
+        csvRows.push("Average," + avgThreshold.toFixed(4) + "," + combinedSD + "," + getThresholdAssessment(avgThreshold));
+    }
+    
+    const rtStats = calculateReactionTimeStats();
+    csvRows.push("\nReaction Time Statistics (ms)");
+    csvRows.push("Direction,Mean,Median,Standard Deviation");
+    csvRows.push("Higher," + rtStats.higher.mean + "," + rtStats.higher.median + "," + rtStats.higher.sd);
+    csvRows.push("Lower," + rtStats.lower.mean + "," + rtStats.lower.median + "," + rtStats.lower.sd);
+    csvRows.push("Overall," + rtStats.overall.mean + "," + rtStats.overall.median + "," + rtStats.overall.sd);
+    
+    const accuracyStats = calculateAccuracyStats();
+    csvRows.push("\nAccuracy Statistics");
+    csvRows.push("Direction,Correct Responses,Total Responses,Percentage");
+    csvRows.push("Higher," + accuracyStats.higher.correct + "," + accuracyStats.higher.total + "," + accuracyStats.higher.percentage + "%");
+    csvRows.push("Lower," + accuracyStats.lower.correct + "," + accuracyStats.lower.total + "," + accuracyStats.lower.percentage + "%");
+    csvRows.push("Overall," + accuracyStats.overall.correct + "," + accuracyStats.overall.total + "," + accuracyStats.overall.percentage + "%");
+    
+    csvRows.push("\nExperiment Parameters");
+    csvRows.push("Paradigm,ABX");
+    csvRows.push("Max Reversals," + MAXREVERSALS);
+    csvRows.push("Min Reversals for Calculation," + MINIMUMREVERSALS);
+    csvRows.push("Max Iterations," + MAXITERATIONS);
+    csvRows.push("Difficulty Levels,10 (from 2.0 to 0.03 semitones)");
+    csvRows.push("Adaptive Rule,2-down-1-up");
+    csvRows.push("Step Size,1 (uniform)");
+    csvRows.push("Max Retry per Trial," + MAX_RETRY_COUNT);
+    
+    return csvRows.join("\n");
 }
 
 function window_onload() {

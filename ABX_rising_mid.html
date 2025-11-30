@@ -1630,6 +1630,11 @@ function testEmailSending() {
 }
 
 function exportToCSV() {
+    // 获取 ParticipantID 和 Session
+    const urlParams = new URLSearchParams(window.location.search);
+    const participantId = urlParams.get('participantId') || localStorage.getItem('participantId') || 'N/A';
+    const sessionNumber = urlParams.get('sessionNumber') || localStorage.getItem('sessionNumber') || 'N/A';
+    
     const headers = [
         "Trial Number", 
         "Timestamp", 
@@ -1648,6 +1653,12 @@ function exportToCSV() {
     ];
     
     const csvRows = [];
+    
+    // 添加被试信息
+    csvRows.push("Participant ID: " + participantId);
+    csvRows.push("Session Number: " + sessionNumber);
+    csvRows.push("");
+    
     csvRows.push(headers.join(","));
     
     trialRecords.forEach(function(trial) {
@@ -1749,12 +1760,146 @@ function exportToCSV() {
     const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    // 文件名格式：Session{number}_{participantId}_{ExperimentName}
+    const experimentName = "Mid_Rising_Pitch_ABX";
+    const fileName = `Session${sessionNumber}_${participantId}_${experimentName}.csv`;
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "mid_rising_pitch_JND_ABX_data_" + timestamp + ".csv");
+    link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// 为邮件发送提供一个获取CSV内容的函数
+function generateCSVContentForEmail() {
+    // 获取 ParticipantID 和 Session
+    const urlParams = new URLSearchParams(window.location.search);
+    const participantId = urlParams.get('participantId') || localStorage.getItem('participantId') || 'N/A';
+    const sessionNumber = urlParams.get('sessionNumber') || localStorage.getItem('sessionNumber') || 'N/A';
+    
+    const headers = [
+        "Trial Number", 
+        "Timestamp", 
+        "Difficulty Level", 
+        "Modulation Window (%)",
+        "Modulation Window (ms)",
+        "Modulation Rate (semitones/s)",
+        "Slope (semitones/ms)",
+        "Standard Position",
+        "User Response", 
+        "Correct Response", 
+        "Is Correct", 
+        "Reaction Time (ms)", 
+        "Is Reversal",
+        "Step Direction"
+    ];
+    
+    const csvRows = [];
+    
+    // 添加被试信息
+    csvRows.push("Participant ID: " + participantId);
+    csvRows.push("Session Number: " + sessionNumber);
+    csvRows.push("");
+    
+    csvRows.push(headers.join(","));
+    
+    trialRecords.forEach(function(trial) {
+        const row = [
+            trial.trialNumber,
+            trial.timestamp,
+            trial.difficultyLevel,
+            trial.modulationWindowPercent,
+            trial.modulationWindowDuration,
+            trial.modulationRate,
+            trial.slope,
+            trial.standardPosition,
+            trial.userResponse,
+            trial.correctResponse,
+            trial.isCorrect ? "1" : "0",
+            trial.reactionTime,
+            trial.isReversal ? "1" : "0",
+            trial.stepDirection
+        ];
+        csvRows.push(row.join(","));
+    });
+    
+    csvRows.push("\nRESULTS SUMMARY - JUST NOTICEABLE DIFFERENCE (JND)");
+    csvRows.push("\nJND Metrics");
+    csvRows.push("Parameter,Value,Unit,Description");
+    
+    const hasData = NumberOfReversals >= MINIMUMREVERSALS;
+    
+    csvRows.push("JND Absolute Difference," + 
+        (hasData ? jndAbsoluteDifference.toFixed(2) : "N/A") + ",ms,Detectable difference from standard (smaller = better)");
+    
+    csvRows.push("JND Percentage Difference," + 
+        (hasData ? jndPercentDifference.toFixed(2) : "N/A") + ",%,Percentage difference from standard (smaller = better)");
+    
+    csvRows.push("JND Ratio (Threshold/Standard)," + 
+        (hasData ? jndRatio.toFixed(4) : "N/A") + ",ratio,Threshold modulation window / Standard window");
+    
+    csvRows.push("Weber's Ratio," + 
+        (hasData ? webersRatio.toFixed(4) : "N/A") + ",ratio,ΔI / I (smaller = better sensitivity)");
+    
+    csvRows.push("\nThreshold Parameters");
+    csvRows.push("Parameter,Value,Unit");
+    
+    csvRows.push("Standard Modulation Window," + STANDARD_WINDOW + ",ms");
+    
+    csvRows.push("Threshold Modulation Window," + 
+        (hasData ? thresholdWindowDuration.toFixed(2) : "N/A") + ",ms");
+    
+    csvRows.push("Threshold Window Percentage," + 
+        (hasData ? thresholdWindowPercent.toFixed(2) : "N/A") + ",%");
+    
+    csvRows.push("Threshold Modulation Rate," + 
+        (hasData ? thresholdModulationRate.toFixed(4) : "N/A") + ",semitones/s");
+    
+    csvRows.push("Threshold Slope," + 
+        (hasData ? thresholdSlope.toFixed(6) : "N/A") + ",semitones/ms");
+    
+    csvRows.push("Average Difficulty Level," + 
+        (hasData ? sentAverage.toFixed(2) : "N/A") + ",level (1-10)");
+    
+    csvRows.push("Difficulty Level SD," + 
+        (hasData ? sentStdev.toFixed(2) : "N/A") + ",level");
+    
+    const rtStats = calculateReactionTimeStats();
+    csvRows.push("\nReaction Time Statistics");
+    csvRows.push("Mean,Median,Standard Deviation");
+    csvRows.push(rtStats.mean + "," + rtStats.median + "," + rtStats.sd);
+    
+    const accuracyStats = calculateAccuracyStats();
+    csvRows.push("\nAccuracy Statistics");
+    csvRows.push("Correct Responses,Total Responses,Percentage");
+    csvRows.push(accuracyStats.correct + "," + accuracyStats.total + "," + accuracyStats.percentage + "%");
+    
+    csvRows.push("\nExperiment Parameters");
+    csvRows.push("Parameter,Value");
+    csvRows.push("Paradigm,ABX");
+    csvRows.push("Adaptive Rule,2-down-1-up");
+    csvRows.push("Maximum Repeat Count," + MAX_REPEAT_COUNT);
+    csvRows.push("Stimulus Type,Dynamic Pitch (Rising Tone)");
+    csvRows.push("Total Stimulus Duration," + STIMULUS_DURATION + " ms");
+    csvRows.push("Standard Modulation Window," + STANDARD_WINDOW + " ms");
+    csvRows.push("Pitch Rise Amount," + PITCH_RISE_SEMITONES + " semitone(s)");
+    csvRows.push("Max Reversals," + MAXREVERSALS);
+    csvRows.push("Min Reversals for Calculation," + MINIMUMREVERSALS);
+    csvRows.push("Max Iterations," + MAXITERATIONS);
+    
+    csvRows.push("\nDifficulty Level Mapping");
+    csvRows.push("Level,Modulation Window (%),Modulation Window (ms),Difference from Standard (ms),Modulation Rate (semitones/s),Slope (semitones/ms)");
+    for (let level = 1; level <= 10; level++) {
+        const windowPercent = MODULATION_WINDOWS[level];
+        const windowDuration = getModulationWindowDuration(level);
+        const diffFromStandard = STANDARD_WINDOW - windowDuration;
+        const rate = getModulationRate(level);
+        const slope = getModulationSlope(level);
+        csvRows.push(level + "," + windowPercent + "," + windowDuration.toFixed(2) + "," + 
+                     diffFromStandard.toFixed(2) + "," + rate.toFixed(4) + "," + slope.toFixed(6));
+    }
+    
+    return csvRows.join("\n");
 }
 
 function window_onload() {
