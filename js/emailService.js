@@ -51,15 +51,111 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * （已弃用）生成 CSV 内容 - 现在直接使用实验页面的CSV生成函数
- * 保留此函数以保持向后兼容
+ * 生成 CSV 内容（从实验数据生成）
+ * @param {Array} trialRecords - 试验记录数组
+ * @param {Object} results - 实验结果对象
+ * @param {Object} experimentInfo - 实验信息（包含startTime, participantId等）
+ * @returns {string} CSV 格式的字符串
  */
 function generateCSVContent(trialRecords, results, experimentInfo) {
-    // 这个函数已被弃用，现在使用实验页面的 generateCSVContentForEmail() 函数
-    console.warn('[EmailService] generateCSVContent() is deprecated. Use experiment page generateCSVContentForEmail() instead.');
-    return '';
+    // 添加被试ID、训练场次和实验开始时间到CSV开头
+    const csvRows = [];
+    if (experimentInfo.participantId) {
+        csvRows.push("Participant ID: " + experimentInfo.participantId);
+    }
+    if (experimentInfo.sessionNumber) {
+        csvRows.push("Session Number: " + experimentInfo.sessionNumber);
+    }
+    if (experimentInfo.startTime) {
+        csvRows.push("Experiment Start Time: " + experimentInfo.startTime);
+    }
+    if (experimentInfo.participantId || experimentInfo.sessionNumber || experimentInfo.startTime) {
+        csvRows.push("");
+    }
+    
+    const headers = [
+        "Trial Number", 
+        "Timestamp", 
+        "Difficulty Level", 
+        "Modulation Window (%)",
+        "Modulation Window (ms)",
+        "Modulation Rate (semitones/s)",
+        "Slope (semitones/ms)",
+        "Standard Position",
+        "User Response", 
+        "Correct Response", 
+        "Is Correct", 
+        "Reaction Time (ms)", 
+        "Is Reversal",
+        "Step Direction"
+    ];
+    
+    csvRows.push(headers.join(","));
+    
+    // 添加试验数据
+    trialRecords.forEach(function(trial) {
+        const row = [
+            trial.trialNumber,
+            trial.timestamp,
+            trial.difficultyLevel,
+            trial.modulationWindowPercent || 'N/A',
+            trial.modulationWindowDuration || 'N/A',
+            trial.modulationRate || 'N/A',
+            trial.slope || 'N/A',
+            trial.standardPosition || 'N/A',
+            trial.userResponse,
+            trial.correctResponse,
+            trial.isCorrect ? "1" : "0",
+            trial.reactionTime,
+            trial.isReversal ? "1" : "0",
+            trial.stepDirection || 'N/A'
+        ];
+        csvRows.push(row.join(","));
+    });
+    
+    // 添加结果摘要
+    if (results) {
+        csvRows.push("\nRESULTS SUMMARY");
+        csvRows.push("\nJND Metrics");
+        csvRows.push("Parameter,Value,Unit,Description");
+        
+        if (results.jndAbsoluteDifference !== undefined) {
+            csvRows.push("JND Absolute Difference," + 
+                results.jndAbsoluteDifference.toFixed(2) + ",ms,Detectable difference from standard");
+        }
+        
+        if (results.jndPercentDifference !== undefined) {
+            csvRows.push("JND Percentage Difference," + 
+                results.jndPercentDifference.toFixed(2) + ",%,Percentage difference from standard");
+        }
+        
+        if (results.webersRatio !== undefined) {
+            csvRows.push("Weber's Ratio," + 
+                results.webersRatio.toFixed(4) + ",ratio,Sensitivity measure");
+        }
+        
+        // 添加实验信息
+        if (experimentInfo) {
+            csvRows.push("\nExperiment Information");
+            csvRows.push("Parameter,Value");
+            if (experimentInfo.participantId) {
+                csvRows.push("Participant ID," + experimentInfo.participantId);
+            }
+            if (experimentInfo.sessionNumber) {
+                csvRows.push("Session Number," + experimentInfo.sessionNumber);
+            }
+            csvRows.push("Experiment Type," + (experimentInfo.type || 'N/A'));
+            if (experimentInfo.startTime) {
+                csvRows.push("Start Time," + experimentInfo.startTime);
+            }
+            csvRows.push("Completion Date," + (experimentInfo.completionDate || new Date().toISOString()));
+            csvRows.push("Total Trials," + (experimentInfo.totalTrials || trialRecords.length));
+            csvRows.push("Total Reversals," + (experimentInfo.totalReversals || 'N/A'));
+        }
+    }
+    
+    return csvRows.join("\n");
 }
-
 
 /**
  * 将 CSV 内容转换为 Base64 编码（用于附件）
@@ -76,7 +172,8 @@ function csvToBase64(csvContent) {
 /**
  * 发送实验结果邮件（带 CSV 附件）
  * @param {Object} params - 参数对象
- * @param {string} params.csvContent - CSV内容字符串（从实验页面生成）
+ * @param {Array} params.trialRecords - 试验记录数组
+ * @param {Object} params.results - 实验结果对象
  * @param {Object} params.experimentInfo - 实验信息
  * @param {string} params.experimentInfo.startTime - 实验开始时间
  * @param {string} params.experimentInfo.completionDate - 实验完成时间
@@ -87,7 +184,8 @@ function csvToBase64(csvContent) {
  */
 function sendExperimentResults(params) {
     const {
-        csvContent = '',
+        trialRecords = [],
+        results = {},
         experimentInfo = {},
         onSuccess = null,
         onError = null
@@ -103,14 +201,15 @@ function sendExperimentResults(params) {
         return;
     }
     
-    // 直接使用传入的CSV内容（已包含被试信息）
+    // 生成 CSV 内容
+    const csvContent = generateCSVContent(trialRecords, results, experimentInfo);
     const csvBase64 = csvToBase64(csvContent);
     
-    // 生成文件名（格式：Session-ParticipantID-ExperimentName）
-    const participantId = experimentInfo.participantId || 'Unknown';
-    const sessionNumber = experimentInfo.sessionNumber || 'Unknown';
-    const experimentType = (experimentInfo.type || 'Pitch_Training').replace(/\s+/g, '_').replace(/[()]/g, '');
-    const fileName = `Session${sessionNumber}_${participantId}_${experimentType}.csv`;
+    // 生成文件名（包含被试ID、训练场次和时间戳）
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+    const participantPrefix = experimentInfo.participantId ? `${experimentInfo.participantId}` : '';
+    const sessionPrefix = experimentInfo.sessionNumber ? `_Session${experimentInfo.sessionNumber}` : '';
+    const fileName = `${experimentInfo.participantId}${sessionPrefix}_${experimentInfo.type}.csv`;
     
     // 准备邮件参数
     const templateParams = {
@@ -119,15 +218,15 @@ function sendExperimentResults(params) {
         experiment_type: experimentInfo.type || 'Pitch Training Experiment',
         start_time: experimentInfo.startTime || 'N/A',
         completion_date: experimentInfo.completionDate || new Date().toLocaleString('zh-CN'),
-        total_trials: experimentInfo.totalTrials || 'N/A',
+        total_trials: experimentInfo.totalTrials || trialRecords.length,
         total_reversals: experimentInfo.totalReversals || 'N/A',
-        jnd_value: experimentInfo.jndValue || 'N/A',
+        jnd_value: results.jndAbsoluteDifference ? results.jndAbsoluteDifference.toFixed(2) + ' ms' : 'N/A',
         accuracy: experimentInfo.accuracy || 'N/A',
         mean_rt: experimentInfo.meanRT || 'N/A',
         attachment_name: fileName,
         attachment_content: csvBase64,
         // 添加简短的结果摘要
-        results_summary: experimentInfo.resultsSummary || 'See attached CSV file for detailed results.'
+        results_summary: generateResultsSummary(results, experimentInfo)
     };
     
     console.log('[EmailService] Sending email with parameters:', {
@@ -156,55 +255,68 @@ function sendExperimentResults(params) {
 }
 
 /**
- * 快速发送函数 - 调用实验页面的CSV生成函数
- * 此函数假设实验页面中已定义 generateCSVContentForEmail() 函数
+ * 生成结果摘要文本
+ * @param {Object} results - 实验结果
+ * @param {Object} experimentInfo - 实验信息
+ * @returns {string} 摘要文本
+ */
+function generateResultsSummary(results, experimentInfo) {
+    let summary = '';
+    
+    if (results.jndAbsoluteDifference !== undefined) {
+        summary += `JND: ${results.jndAbsoluteDifference.toFixed(2)} ms\n`;
+    }
+    
+    if (results.jndPercentDifference !== undefined) {
+        summary += `JND Percentage: ${results.jndPercentDifference.toFixed(2)}%\n`;
+    }
+    
+    if (experimentInfo.accuracy) {
+        summary += `Accuracy: ${experimentInfo.accuracy}\n`;
+    }
+    
+    if (experimentInfo.meanRT) {
+        summary += `Mean RT: ${experimentInfo.meanRT} ms\n`;
+    }
+    
+    return summary || 'See attached CSV file for detailed results.';
+}
+
+/**
+ * 快速发送函数 - 自动从全局变量获取数据
+ * 此函数假设实验页面中已定义相关全局变量
  */
 function sendCurrentExperimentResults() {
-    console.log('[EmailService] Starting to send current experiment results...');
+    // 尝试从全局作用域获取实验数据
+    const trialRecords = window.trialRecords || [];
+    const results = {
+        jndAbsoluteDifference: window.jndAbsoluteDifference,
+        jndPercentDifference: window.jndPercentDifference,
+        jndRatio: window.jndRatio,
+        webersRatio: window.webersRatio,
+        thresholdWindowDuration: window.thresholdWindowDuration,
+        thresholdWindowPercent: window.thresholdWindowPercent
+    };
     
-    // 检查实验页面是否定义了CSV生成函数
-    if (typeof window.generateCSVContentForEmail !== 'function') {
-        console.error('[EmailService] generateCSVContentForEmail() function not found in experiment page');
-        alert('錯誤：實驗頁面未定義CSV生成函數。請檢查實驗頁面代碼。');
-        return;
-    }
-    
-    // 调用实验页面的CSV生成函数
-    const csvContent = window.generateCSVContentForEmail();
-    
-    if (!csvContent) {
-        console.error('[EmailService] CSV content is empty');
-        alert('錯誤：無法生成CSV內容。');
-        return;
-    }
-    
-    // 获取被试ID和训练场次
+    // 获取被试ID和训练场次（从URL参数或localStorage）
     const participantId = getParticipantId();
     const sessionNumber = getSessionNumber();
     
-    // 获取实验信息
     const experimentInfo = {
         participantId: participantId,
         sessionNumber: sessionNumber,
         type: document.querySelector('.training-info')?.textContent || 'Pitch Training',
         startTime: window.experimentStartTime || localStorage.getItem('experimentStartTime') || 'N/A',
         completionDate: new Date().toLocaleString('zh-CN'),
-        totalTrials: window.numberOfIterations || 'N/A',
-        totalReversals: window.NumberOfReversals || 'N/A',
+        totalTrials: window.numberOfIterations || trialRecords.length,
+        totalReversals: window.NumberOfReversals || 0,
         accuracy: calculateAccuracyForEmail(),
-        meanRT: calculateMeanRTForEmail(),
-        jndValue: window.jndAbsoluteDifference ? window.jndAbsoluteDifference.toFixed(2) + ' ms' : 'N/A',
-        resultsSummary: generateQuickSummary()
+        meanRT: calculateMeanRTForEmail()
     };
     
-    console.log('[EmailService] Sending email with experiment info:', {
-        participantId: experimentInfo.participantId,
-        sessionNumber: experimentInfo.sessionNumber,
-        experimentType: experimentInfo.type
-    });
-    
     sendExperimentResults({
-        csvContent: csvContent,
+        trialRecords: trialRecords,
+        results: results,
         experimentInfo: experimentInfo,
         onSuccess: function(response) {
             alert('实验结果已成功发送到指定邮箱！');
@@ -216,26 +328,6 @@ function sendCurrentExperimentResults() {
             alert('发送邮件失败：' + error.message + '\n请检查网络连接或联系管理员。');
         }
     });
-}
-
-/**
- * 生成快速摘要
- */
-function generateQuickSummary() {
-    let summary = '';
-    
-    if (window.jndAbsoluteDifference !== undefined) {
-        summary += `JND: ${window.jndAbsoluteDifference.toFixed(2)} ms\n`;
-    }
-    
-    if (window.trialRecords && window.trialRecords.length > 0) {
-        const accuracy = calculateAccuracyForEmail();
-        const meanRT = calculateMeanRTForEmail();
-        summary += `Accuracy: ${accuracy}\n`;
-        summary += `Mean RT: ${meanRT}\n`;
-    }
-    
-    return summary || 'See attached CSV file for detailed results.';
 }
 
 /**

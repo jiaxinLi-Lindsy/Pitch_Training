@@ -682,7 +682,7 @@ function getLocalTimestamp() {
 
 // 修改后的实验常量 - 10个难度级别，步长统一为1
 const MAXREVERSALS = 10;
-const MAXITERATIONS = 100;
+const MAXITERATIONS = 80;
 const LOWERLIMIT = 1;
 const UPPERLIMIT = 10;
 const DECREASING = -1;
@@ -721,6 +721,9 @@ var xSound;
 // 重播相关变量
 var isReplayTrial = false;
 var currentRetryCount = 0;
+
+// 邮件发送状态变量（防止重复发送）
+var emailSent = false;
 
 // 更新后的半音值映射（10个级别）
 function mapLevelToSemitone(level) {
@@ -1016,6 +1019,16 @@ function resetPage() {
         document.getElementById('viewResult').disabled = false;
         document.getElementById('text1').value = "實驗結束！";
         updateProgressBar(100);
+        
+        // 自动发送实验结果到指定邮箱（防止重复发送）
+        if (!emailSent) {
+            emailSent = true;
+            logDebug("Preparing to send Level_mid experiment results via email...");
+            setTimeout(function() {
+                sendLevelMidExperimentResults();
+            }, 1000);
+        }
+        
         return;
     }
     
@@ -1055,6 +1068,15 @@ function resetPage() {
             document.getElementById('viewResult').disabled = false;
             document.getElementById('text1').value = "實驗結束！";
             updateProgressBar(100);
+            
+            // 自动发送实验结果到指定邮箱（防止重复发送）
+            if (!emailSent) {
+                emailSent = true;
+                logDebug("Preparing to send Level_mid experiment results via email...");
+                setTimeout(function() {
+                    sendLevelMidExperimentResults();
+                }, 1000);
+            }
         }
     } else {
         updateProgressBar();
@@ -1775,82 +1797,46 @@ function view_onclick() {
     
     displayResults();
     
-    // 自动发送实验结果到指定邮箱
-    logDebug("Preparing to send experiment results via email...");
-    
-    // 延迟1秒后发送邮件,确保所有数据已准备好
-    setTimeout(function() {
-        if (typeof sendCurrentExperimentResults === 'function') {
-            sendCurrentExperimentResults();
-            logDebug("Email sending initiated");
-        } else {
-            logDebug("Warning: Email service not available. Please check if emailService.js is loaded.");
-        }
-    }, 1000);
-}
-
-function testEmailSending() {
-    logDebug("Testing email sending functionality...");
-    
-    // 检查EmailJS是否已加载
-    if (typeof emailjs === 'undefined') {
-        alert('EmailJS庫未加載！請檢查網絡連接。');
-        logDebug("Error: EmailJS library not loaded");
-        return;
-    }
-    
-    // 检查邮件服务是否可用
-    if (typeof sendCurrentExperimentResults !== 'function') {
-        alert('郵件服務未加載！請檢查emailService.js文件。');
-        logDebug("Error: Email service not loaded");
-        return;
-    }
-    
-    // 检查是否有实验数据
-    if (trialRecords.length === 0) {
-        alert('沒有實驗數據！請先完成至少一次試驗。');
-        logDebug("Warning: No trial data available for testing");
-        return;
-    }
-    
-    // 确认发送
-    if (!confirm('確定要發送測試郵件嗎？\n\n這將發送當前的實驗數據到配置的郵箱。')) {
-        logDebug("Email test cancelled by user");
-        return;
-    }
-    
-    // 禁用按钮防止重复点击
-    const testBtn = document.getElementById('testEmailBtn');
-    const originalText = testBtn.textContent;
-    testBtn.disabled = true;
-    testBtn.textContent = '發送中...';
-    
-    logDebug("Initiating test email send...");
-    
-    // 调用邮件发送函数
-    try {
-        sendCurrentExperimentResults();
+    // 自动发送实验结果到指定邮箱（防止重复发送）
+    if (!emailSent) {
+        emailSent = true;
+        logDebug("Preparing to send Level_mid experiment results via email...");
         
-        // 3秒后恢复按钮状态
+        // 延迟1秒后发送邮件,确保所有数据已准备好
         setTimeout(function() {
-            testBtn.disabled = false;
-            testBtn.textContent = originalText;
-            logDebug("Test email button re-enabled");
-        }, 3000);
-        
-    } catch (error) {
-        logDebug("Error during email test: " + error);
-        alert('郵件發送過程中出錯：' + error);
-        testBtn.disabled = false;
-        testBtn.textContent = originalText;
+            sendLevelMidExperimentResults();
+        }, 1000);
+    } else {
+        logDebug("Email already sent, skipping duplicate send");
     }
 }
 
-function exportToCSV() {
-    // 获取 ParticipantID 和 Session
+/**
+ * Level_mid 专用的邮件发送函数
+ * 使用与 exportToCSV 完全相同的 CSV 格式
+ */
+function sendLevelMidExperimentResults() {
+    logDebug("Preparing Level_mid experiment results for email...");
+    
+    // 检查 EmailJS 是否已加载
+    if (typeof emailjs === 'undefined') {
+        logDebug("Error: EmailJS library not loaded");
+        alert('EmailJS庫未加載！請檢查網絡連接。');
+        return;
+    }
+    
+    // 获取被试ID和训练场次
     const urlParams = new URLSearchParams(window.location.search);
     const participantId = urlParams.get('participantId') || localStorage.getItem('participantId') || 'N/A';
     const sessionNumber = urlParams.get('sessionNumber') || localStorage.getItem('sessionNumber') || 'N/A';
+    
+    // 使用与 exportToCSV 完全相同的 CSV 格式
+    const csvRows = [];
+    
+    // 添加被试信息
+    csvRows.push("Participant ID: " + participantId);
+    csvRows.push("Session Number: " + sessionNumber);
+    csvRows.push("");
     
     const headers = [
         "Trial Number", 
@@ -1867,12 +1853,281 @@ function exportToCSV() {
         "Step Direction"
     ];
     
+    csvRows.push(headers.join(","));
+    
+    trialRecords.forEach(function(trial) {
+        const row = [
+            trial.trialNumber,
+            '"' + trial.timestamp + '"',
+            trial.direction,
+            trial.difficultyLevel,
+            trial.semitoneValue,
+            trial.standardPosition,
+            '"' + trial.userResponse + '"',
+            '"' + trial.correctResponse + '"',
+            trial.isCorrect ? "1" : "0",
+            trial.reactionTime,
+            trial.isReversal ? "1" : "0",
+            '"' + trial.stepDirection + '"'
+        ];
+        csvRows.push(row.join(","));
+    });
+    
+    csvRows.push("\nRESULTS SUMMARY");
+    csvRows.push("\nThreshold Results (semitones)");
+    csvRows.push("Direction,Threshold,Standard Deviation,Assessment");
+    
+    const hasHigherData = NumberOfReversals[0] >= MINIMUMREVERSALS;
+    const hasLowerData = NumberOfReversals[1] >= MINIMUMREVERSALS;
+    
+    csvRows.push("Higher," + 
+        (hasHigherData ? sentAverage[0].toFixed(4) : "Insufficient data") + "," + 
+        (hasHigherData ? sentStdev[0].toFixed(4) : "N/A") + "," + 
+        (hasHigherData ? getThresholdAssessment(sentAverage[0]) : "N/A"));
+    
+    csvRows.push("Lower," + 
+        (hasLowerData ? sentAverage[1].toFixed(4) : "Insufficient data") + "," + 
+        (hasLowerData ? sentStdev[1].toFixed(4) : "N/A") + "," + 
+        (hasLowerData ? getThresholdAssessment(sentAverage[1]) : "N/A"));
+    
+    if (hasHigherData && hasLowerData) {
+        const avgThreshold = (sentAverage[0] + sentAverage[1]) / 2;
+        const combinedVariance = (Math.pow(sentStdev[0], 2) + Math.pow(sentStdev[1], 2)) / 2;
+        const combinedSD = Math.sqrt(combinedVariance).toFixed(4);
+        
+        csvRows.push("Average," + avgThreshold.toFixed(4) + "," + combinedSD + "," + getThresholdAssessment(avgThreshold));
+    }
+    
+    const rtStats = calculateReactionTimeStats();
+    csvRows.push("\nReaction Time Statistics (ms)");
+    csvRows.push("Direction,Mean,Median,Standard Deviation");
+    csvRows.push("Higher," + rtStats.higher.mean + "," + rtStats.higher.median + "," + rtStats.higher.sd);
+    csvRows.push("Lower," + rtStats.lower.mean + "," + rtStats.lower.median + "," + rtStats.lower.sd);
+    csvRows.push("Overall," + rtStats.overall.mean + "," + rtStats.overall.median + "," + rtStats.overall.sd);
+    
+    const accuracyStats = calculateAccuracyStats();
+    csvRows.push("\nAccuracy Statistics");
+    csvRows.push("Direction,Correct Responses,Total Responses,Percentage");
+    csvRows.push("Higher," + accuracyStats.higher.correct + "," + accuracyStats.higher.total + "," + accuracyStats.higher.percentage + "%");
+    csvRows.push("Lower," + accuracyStats.lower.correct + "," + accuracyStats.lower.total + "," + accuracyStats.lower.percentage + "%");
+    csvRows.push("Overall," + accuracyStats.overall.correct + "," + accuracyStats.overall.total + "," + accuracyStats.overall.percentage + "%");
+    
+    csvRows.push("\nExperiment Parameters");
+    csvRows.push("Paradigm,ABX");
+    csvRows.push("Max Reversals," + MAXREVERSALS);
+    csvRows.push("Min Reversals for Calculation," + MINIMUMREVERSALS);
+    csvRows.push("Max Iterations," + MAXITERATIONS);
+    csvRows.push("Difficulty Levels,10 (from 2.0 to 0.03 semitones)");
+    csvRows.push("Adaptive Rule,2-down-1-up");
+    csvRows.push("Step Size,1 (uniform)");
+    csvRows.push("Max Retry per Trial," + MAX_RETRY_COUNT);
+    
+    const csvContent = csvRows.join("\n");
+    
+    // 转换为 Base64
+    const BOM = '\uFEFF';
+    const contentWithBOM = BOM + csvContent;
+    const csvBase64 = btoa(unescape(encodeURIComponent(contentWithBOM)));
+    
+    // 生成文件名
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const fileName = participantId + "_Session" + sessionNumber + "_Level_Tone_ABX.csv";
+    
+    // 计算结果摘要
+    let resultsSummary = "Level Tone Discrimination Results:\n";
+    if (hasHigherData) {
+        resultsSummary += "- Higher Direction: " + sentAverage[0].toFixed(4) + " semitones\n";
+    }
+    if (hasLowerData) {
+        resultsSummary += "- Lower Direction: " + sentAverage[1].toFixed(4) + " semitones\n";
+    }
+    if (hasHigherData && hasLowerData) {
+        const avgThreshold = (sentAverage[0] + sentAverage[1]) / 2;
+        resultsSummary += "- Average Threshold: " + avgThreshold.toFixed(4) + " semitones\n";
+    }
+    resultsSummary += "- Accuracy: " + accuracyStats.overall.percentage + "%\n";
+    resultsSummary += "- Mean RT: " + rtStats.overall.mean + " ms";
+    
+    // 准备邮件参数
+    const templateParams = {
+        participant_id: participantId,
+        session_number: sessionNumber,
+        experiment_type: "Level Tone Discrimination (ABX)",
+        start_time: window.experimentStartTime || localStorage.getItem('experimentStartTime') || 'N/A',
+        completion_date: new Date().toLocaleString('zh-CN'),
+        total_trials: trialRecords.length,
+        total_reversals: NumberOfReversals[0] + NumberOfReversals[1],
+        jnd_value: hasHigherData && hasLowerData ? 
+            ((sentAverage[0] + sentAverage[1]) / 2).toFixed(4) + " semitones" : "N/A",
+        accuracy: accuracyStats.overall.percentage + "%",
+        mean_rt: rtStats.overall.mean + " ms",
+        attachment_name: fileName,
+        attachment_content: csvBase64,
+        results_summary: resultsSummary
+    };
+    
+    logDebug("Sending email with Level_mid data...");
+    logDebug("Higher threshold: " + (hasHigherData ? sentAverage[0].toFixed(4) : "N/A"));
+    logDebug("Lower threshold: " + (hasLowerData ? sentAverage[1].toFixed(4) : "N/A"));
+    
+    // 获取 EmailJS 配置
+    const serviceId = (typeof EMAIL_CONFIG !== 'undefined' && EMAIL_CONFIG.serviceId) || 'service_exe9d5a';
+    const templateId = (typeof EMAIL_CONFIG !== 'undefined' && EMAIL_CONFIG.templateId) || 'template_4c3g3ss';
+    
+    // 发送邮件
+    emailjs.send(serviceId, templateId, templateParams)
+        .then(function(response) {
+            logDebug("Email sent successfully! Status: " + response.status);
+            alert('实验结果已成功发送到指定邮箱！');
+            
+            // 检查是否需要跳转到下一个实验
+            if (typeof checkAndNavigateToNextExperiment === 'function') {
+                checkAndNavigateToNextExperiment();
+            }
+        })
+        .catch(function(error) {
+            logDebug("Failed to send email: " + error);
+            alert('发送邮件失败：' + error.text + '\n请检查网络连接或联系管理员。');
+        });
+}
+
+function testEmailSending() {
+    logDebug("Testing email sending functionality...");
+    
+    // 检查EmailJS是否已加载
+    if (typeof emailjs === 'undefined') {
+        alert('EmailJS庫未加載！請檢查網絡連接。');
+        logDebug("Error: EmailJS library not loaded");
+        return;
+    }
+    
+    // 检查是否有实验数据
+    if (trialRecords.length === 0) {
+        alert('沒有實驗數據！請先完成至少一次試驗。');
+        logDebug("Warning: No trial data available for testing");
+        return;
+    }
+    
+    // 确认发送
+    if (!confirm('確定要發送測試郵件嗎？\n\n這將發送當前的實驗數據到配置的郵箱。\n\n注意：這是測試功能，不會影響實驗完成後的自動發送。')) {
+        logDebug("Email test cancelled by user");
+        return;
+    }
+    
+    // 禁用按钮防止重复点击
+    const testBtn = document.getElementById('testEmailBtn');
+    const originalText = testBtn.textContent;
+    testBtn.disabled = true;
+    testBtn.textContent = '發送中...';
+    
+    logDebug("Initiating TEST email send (will not affect auto-send)...");
+    
+    // 直接发送测试邮件，不影响 emailSent 状态，不触发页面跳转
+    try {
+        // 获取被试ID和训练场次
+        const urlParams = new URLSearchParams(window.location.search);
+        const participantId = urlParams.get('participantId') || localStorage.getItem('participantId') || 'N/A';
+        const sessionNumber = urlParams.get('sessionNumber') || localStorage.getItem('sessionNumber') || 'N/A';
+        
+        // 生成 CSV（与 exportToCSV 格式相同）
+        const csvRows = [];
+        csvRows.push("Participant ID: " + participantId);
+        csvRows.push("Session Number: " + sessionNumber);
+        csvRows.push("NOTE: This is a TEST email");
+        csvRows.push("");
+        
+        const headers = [
+            "Trial Number", "Timestamp", "Direction", "Difficulty Level", 
+            "Semitone Value", "Standard Position", "User Response", 
+            "Correct Response", "Is Correct", "Reaction Time (ms)", 
+            "Is Reversal", "Step Direction"
+        ];
+        csvRows.push(headers.join(","));
+        
+        trialRecords.forEach(function(trial) {
+            const row = [
+                trial.trialNumber, '"' + trial.timestamp + '"', trial.direction,
+                trial.difficultyLevel, trial.semitoneValue, trial.standardPosition,
+                '"' + trial.userResponse + '"', '"' + trial.correctResponse + '"',
+                trial.isCorrect ? "1" : "0", trial.reactionTime,
+                trial.isReversal ? "1" : "0", '"' + trial.stepDirection + '"'
+            ];
+            csvRows.push(row.join(","));
+        });
+        
+        const csvContent = csvRows.join("\n");
+        const BOM = '\uFEFF';
+        const csvBase64 = btoa(unescape(encodeURIComponent(BOM + csvContent)));
+        const fileName = "TEST_" + participantId + "_Session" + sessionNumber + "_Level_Tone_ABX.csv";
+        
+        const templateParams = {
+            participant_id: participantId,
+            session_number: sessionNumber,
+            experiment_type: "[TEST] Level Tone Discrimination (ABX)",
+            start_time: window.experimentStartTime || 'N/A',
+            completion_date: new Date().toLocaleString('zh-CN'),
+            total_trials: trialRecords.length,
+            total_reversals: NumberOfReversals[0] + NumberOfReversals[1],
+            jnd_value: "TEST - Data may be incomplete",
+            accuracy: "TEST",
+            mean_rt: "TEST",
+            attachment_name: fileName,
+            attachment_content: csvBase64,
+            results_summary: "This is a TEST email to verify email functionality."
+        };
+        
+        const serviceId = (typeof EMAIL_CONFIG !== 'undefined' && EMAIL_CONFIG.serviceId) || 'service_exe9d5a';
+        const templateId = (typeof EMAIL_CONFIG !== 'undefined' && EMAIL_CONFIG.templateId) || 'template_4c3g3ss';
+        
+        emailjs.send(serviceId, templateId, templateParams)
+            .then(function(response) {
+                logDebug("Test email sent successfully! Status: " + response.status);
+                alert('測試郵件發送成功！\n\n注意：這只是測試，實驗完成後仍會自動發送正式結果。');
+                testBtn.disabled = false;
+                testBtn.textContent = originalText;
+            })
+            .catch(function(error) {
+                logDebug("Test email failed: " + error);
+                alert('測試郵件發送失敗：' + error.text);
+                testBtn.disabled = false;
+                testBtn.textContent = originalText;
+            });
+        
+    } catch (error) {
+        logDebug("Error during email test: " + error);
+        alert('郵件發送過程中出錯：' + error);
+        testBtn.disabled = false;
+        testBtn.textContent = originalText;
+    }
+}
+
+function exportToCSV() {
+    // 获取 ParticipantID 和 Session
+    const urlParams = new URLSearchParams(window.location.search);
+    const participantId = urlParams.get('participantId') || localStorage.getItem('participantId') || 'N/A';
+    const sessionNumber = urlParams.get('sessionNumber') || localStorage.getItem('sessionNumber') || 'N/A';
+    
     const csvRows = [];
     
     // 添加被试信息
     csvRows.push("Participant ID: " + participantId);
     csvRows.push("Session Number: " + sessionNumber);
     csvRows.push("");
+    
+    const headers = [
+        "Trial Number", 
+        "Timestamp", 
+        "Direction", 
+        "Difficulty Level", 
+        "Semitone Value", 
+        "Standard Position",
+        "User Response", 
+        "Correct Response", 
+        "Is Correct", 
+        "Reaction Time (ms)", 
+        "Is Reversal",
+        "Step Direction"
+    ];
     
     csvRows.push(headers.join(","));
     
@@ -1946,115 +2201,12 @@ function exportToCSV() {
     const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    // 文件名格式：Session{number}_{participantId}_{ExperimentName}
-    const experimentName = "Level_Tone_Discrimination_ABX";
-    const fileName = `Session${sessionNumber}_${participantId}_${experimentName}.csv`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", fileName);
+    link.setAttribute("download", "pitch_discrimination_ABX_data_" + timestamp + ".csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-}
-
-// 为邮件发送提供一个获取CSV内容的函数
-function generateCSVContentForEmail() {
-    // 获取 ParticipantID 和 Session
-    const urlParams = new URLSearchParams(window.location.search);
-    const participantId = urlParams.get('participantId') || localStorage.getItem('participantId') || 'N/A';
-    const sessionNumber = urlParams.get('sessionNumber') || localStorage.getItem('sessionNumber') || 'N/A';
-    
-    const headers = [
-        "Trial Number", 
-        "Timestamp", 
-        "Direction", 
-        "Difficulty Level", 
-        "Semitone Value", 
-        "Standard Position",
-        "User Response", 
-        "Correct Response", 
-        "Is Correct", 
-        "Reaction Time (ms)", 
-        "Is Reversal",
-        "Step Direction"
-    ];
-    
-    const csvRows = [];
-    
-    // 添加被试信息
-    csvRows.push("Participant ID: " + participantId);
-    csvRows.push("Session Number: " + sessionNumber);
-    csvRows.push("");
-    
-    csvRows.push(headers.join(","));
-    
-    trialRecords.forEach(function(trial) {
-        const row = [
-            trial.trialNumber,
-            '"' + trial.timestamp + '"',
-            trial.direction,
-            trial.difficultyLevel,
-            trial.semitoneValue,
-            trial.standardPosition,
-            '"' + trial.userResponse + '"',
-            '"' + trial.correctResponse + '"',
-            trial.isCorrect ? "1" : "0",
-            trial.reactionTime,
-            trial.isReversal ? "1" : "0",
-            '"' + trial.stepDirection + '"'
-        ];
-        csvRows.push(row.join(","));
-    });
-    
-    csvRows.push("\nRESULTS SUMMARY");
-    csvRows.push("\nThreshold Results (semitones)");
-    csvRows.push("Direction,Threshold,Standard Deviation,Assessment");
-    
-    const hasHigherData = NumberOfReversals[0] >= MINIMUMREVERSALS;
-    const hasLowerData = NumberOfReversals[1] >= MINIMUMREVERSALS;
-    
-    csvRows.push("Higher," + 
-        (hasHigherData ? sentAverage[0].toFixed(4) : "Insufficient data") + "," + 
-        (hasHigherData ? sentStdev[0].toFixed(4) : "N/A") + "," + 
-        (hasHigherData ? getThresholdAssessment(sentAverage[0]) : "N/A"));
-    
-    csvRows.push("Lower," + 
-        (hasLowerData ? sentAverage[1].toFixed(4) : "Insufficient data") + "," + 
-        (hasLowerData ? sentStdev[1].toFixed(4) : "N/A") + "," + 
-        (hasLowerData ? getThresholdAssessment(sentAverage[1]) : "N/A"));
-    
-    if (hasHigherData && hasLowerData) {
-        const avgThreshold = (sentAverage[0] + sentAverage[1]) / 2;
-        const combinedVariance = (Math.pow(sentStdev[0], 2) + Math.pow(sentStdev[1], 2)) / 2;
-        const combinedSD = Math.sqrt(combinedVariance).toFixed(4);
-        
-        csvRows.push("Average," + avgThreshold.toFixed(4) + "," + combinedSD + "," + getThresholdAssessment(avgThreshold));
-    }
-    
-    const rtStats = calculateReactionTimeStats();
-    csvRows.push("\nReaction Time Statistics (ms)");
-    csvRows.push("Direction,Mean,Median,Standard Deviation");
-    csvRows.push("Higher," + rtStats.higher.mean + "," + rtStats.higher.median + "," + rtStats.higher.sd);
-    csvRows.push("Lower," + rtStats.lower.mean + "," + rtStats.lower.median + "," + rtStats.lower.sd);
-    csvRows.push("Overall," + rtStats.overall.mean + "," + rtStats.overall.median + "," + rtStats.overall.sd);
-    
-    const accuracyStats = calculateAccuracyStats();
-    csvRows.push("\nAccuracy Statistics");
-    csvRows.push("Direction,Correct Responses,Total Responses,Percentage");
-    csvRows.push("Higher," + accuracyStats.higher.correct + "," + accuracyStats.higher.total + "," + accuracyStats.higher.percentage + "%");
-    csvRows.push("Lower," + accuracyStats.lower.correct + "," + accuracyStats.lower.total + "," + accuracyStats.lower.percentage + "%");
-    csvRows.push("Overall," + accuracyStats.overall.correct + "," + accuracyStats.overall.total + "," + accuracyStats.overall.percentage + "%");
-    
-    csvRows.push("\nExperiment Parameters");
-    csvRows.push("Paradigm,ABX");
-    csvRows.push("Max Reversals," + MAXREVERSALS);
-    csvRows.push("Min Reversals for Calculation," + MINIMUMREVERSALS);
-    csvRows.push("Max Iterations," + MAXITERATIONS);
-    csvRows.push("Difficulty Levels,10 (from 2.0 to 0.03 semitones)");
-    csvRows.push("Adaptive Rule,2-down-1-up");
-    csvRows.push("Step Size,1 (uniform)");
-    csvRows.push("Max Retry per Trial," + MAX_RETRY_COUNT);
-    
-    return csvRows.join("\n");
 }
 
 function window_onload() {
@@ -2072,6 +2224,7 @@ function window_onload() {
     trialRecords = [];
     isReplayTrial = false;
     currentRetryCount = 0;
+    emailSent = false;
 
     document.getElementById('text1').value = "準備完畢後請點擊\"開始實驗\"";
     document.getElementById('smile').src = "Media/null.gif";
