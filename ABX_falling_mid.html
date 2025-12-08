@@ -375,13 +375,14 @@
             }
         }
         
-        /* 手机适配 */
+        /* 手机适配 - 适合老年人阅读的大字体 */
         @media (max-width: 600px) {
             body {
                 margin: 5px;
+                font-size: 18px;
             }
             .container {
-                padding: 10px;
+                padding: 12px;
                 border-radius: 8px;
             }
             .header {
@@ -392,20 +393,23 @@
                 height: auto;
             }
             .training-info {
-                font-size: 14px;
+                font-size: 18px;
+                line-height: 1.5;
             }
             .instruction-text {
-                font-size: 12px;
+                font-size: 16px;
+                line-height: 1.5;
             }
             .prompt-text {
-                font-size: 18px;
+                font-size: 22px;
                 margin-top: 20px;
                 margin-bottom: 15px;
+                line-height: 1.4;
             }
             .response-button {
-                width: 110px;
-                height: 110px;
-                font-size: 18px;
+                width: 120px;
+                height: 120px;
+                font-size: 22px;
                 margin: 0 10px;
             }
             .control-button-container {
@@ -414,10 +418,10 @@
                 align-items: center;
             }
             .control-button {
-                padding: 12px 24px;
-                font-size: 16px;
-                width: 80%;
-                max-width: 200px;
+                padding: 14px 28px;
+                font-size: 20px;
+                width: 85%;
+                max-width: 220px;
             }
             .feedback {
                 height: 80px;
@@ -432,46 +436,51 @@
                 max-width: 100%;
                 height: auto;
                 min-height: 50px;
-                font-size: 16px;
-                padding: 8px;
+                font-size: 20px;
+                padding: 10px;
+                line-height: 1.4;
             }
             .auxiliary-buttons {
                 flex-direction: column;
-                gap: 10px;
+                gap: 12px;
                 width: 100%;
             }
             .auxiliary-buttons button {
                 width: 100%;
-                padding: 12px 15px;
-                font-size: 14px;
+                padding: 14px 18px;
+                font-size: 18px;
             }
             .auxiliary-buttons label {
                 width: 100%;
                 text-align: center;
+                font-size: 18px;
             }
             .results-container {
                 padding: 15px;
             }
             .result-heading {
-                font-size: 18px;
-            }
-            .result-table {
-                font-size: 12px;
-            }
-            .result-table th, .result-table td {
-                padding: 6px 4px;
-            }
-            .highlight-box {
-                padding: 10px;
-            }
-            .highlight-value {
                 font-size: 22px;
             }
-            .back-button, .print-button {
-                width: 80%;
-                max-width: 200px;
-                padding: 12px 20px;
+            .result-table {
                 font-size: 16px;
+            }
+            .result-table th, .result-table td {
+                padding: 8px 6px;
+            }
+            .highlight-box {
+                padding: 12px;
+            }
+            .highlight-value {
+                font-size: 28px;
+            }
+            .highlight-label {
+                font-size: 16px;
+            }
+            .back-button, .print-button {
+                width: 85%;
+                max-width: 220px;
+                padding: 14px 24px;
+                font-size: 20px;
             }
             .diagnostic-content {
                 width: 95%;
@@ -479,19 +488,19 @@
                 padding: 15px;
             }
             .diagnostic-heading {
-                font-size: 20px;
+                font-size: 24px;
             }
             .statistics-table {
-                font-size: 12px;
+                font-size: 16px;
             }
             .statistics-table th, .statistics-table td {
-                padding: 6px 4px;
+                padding: 8px 6px;
             }
             .progress-bar-container {
-                height: 15px;
+                height: 18px;
             }
             .progress-label {
-                font-size: 12px;
+                font-size: 16px;
             }
             .chart-container {
                 height: 200px;
@@ -1027,7 +1036,7 @@ function generateDiagnosticRecommendations() {
     document.getElementById('diagnosticRecommendations').innerHTML = recommendations;
 }
 
-function testAudio() {
+async function testAudio() {
     logDebug("Starting to test all audio files...");
     var audios = document.querySelectorAll('audio');
     
@@ -1035,37 +1044,22 @@ function testAudio() {
         unlockAudioContext();
     }
     
-    var index = 0;
-    function playNext() {
-        if (index >= audios.length) {
-            logDebug("All audio testing complete!");
-            return;
+    for (var i = 0; i < audios.length; i++) {
+        var audio = audios[i];
+        logDebug("Testing audio #" + (i + 1) + "/" + audios.length + ": " + audio.id);
+        
+        try {
+            await playAudioWithTimeout(audio, 5000);
+            logDebug(audio.id + " played successfully");
+        } catch (error) {
+            logDebug("Failed to play " + audio.id + ": " + error);
         }
         
-        var audio = audios[index];
-        logDebug("Testing audio #" + (index + 1) + ": " + audio.id);
-        
-        audio.currentTime = 0;
-        
-        var playPromise = audio.play();
-        if (playPromise !== undefined) {
-            playPromise.then(function() {
-                logDebug(audio.id + " played successfully");
-                
-                audio.onended = function() {
-                    logDebug(audio.id + " playback ended");
-                    index++;
-                    setTimeout(playNext, 500);
-                };
-            }).catch(function(error) {
-                logDebug("Failed to play " + audio.id + ": " + error);
-                index++;
-                setTimeout(playNext, 500);
-            });
-        }
+        // 短暂间隔后播放下一个
+        await delay(300);
     }
     
-    playNext();
+    logDebug("All audio testing complete!");
 }
 
 function unlockAudioContext() {
