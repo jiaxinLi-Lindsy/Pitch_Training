@@ -348,15 +348,176 @@
         .direction-stats-bad {
             color: #e74c3c;
         }
-        @media (max-width: 600px) {
+        /* 平板适配 */
+        @media (max-width: 768px) {
+            body {
+                margin: 10px;
+            }
+            .container {
+                padding: 15px;
+            }
+            .header img {
+                max-width: 100%;
+                height: auto;
+            }
             .response-button {
-                width: 130px;
-                height: 130px;
-                font-size: 22px;
-                margin: 0 20px;
+                width: 140px;
+                height: 140px;
+                font-size: 24px;
+                margin: 0 25px;
+            }
+            .status {
+                width: 90%;
+                max-width: 350px;
+            }
+            .result-table {
+                font-size: 14px;
+            }
+            .result-table th, .result-table td {
+                padding: 8px 6px;
+            }
+        }
+        
+        /* 手机适配 */
+        @media (max-width: 600px) {
+            body {
+                margin: 5px;
+            }
+            .container {
+                padding: 10px;
+                border-radius: 8px;
+            }
+            .header {
+                margin-bottom: 20px;
+            }
+            .header img {
+                max-width: 100%;
+                height: auto;
+            }
+            .training-info {
+                font-size: 14px;
+            }
+            .instruction-text {
+                font-size: 12px;
+            }
+            .prompt-text {
+                font-size: 18px;
+                margin-top: 20px;
+                margin-bottom: 15px;
+            }
+            .response-button {
+                width: 110px;
+                height: 110px;
+                font-size: 18px;
+                margin: 0 10px;
+            }
+            .control-button-container {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
             }
             .control-button {
+                padding: 12px 24px;
+                font-size: 16px;
+                width: 80%;
+                max-width: 200px;
+            }
+            .feedback {
+                height: 80px;
+                margin: 20px 0;
+            }
+            .feedback img {
+                width: 80px;
+                height: auto;
+            }
+            .status {
+                width: 95%;
+                max-width: 100%;
+                height: auto;
+                min-height: 50px;
+                font-size: 16px;
+                padding: 8px;
+            }
+            .retry-counter {
+                font-size: 12px;
+            }
+            .auxiliary-buttons {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+            .auxiliary-buttons button {
+                width: 100%;
+                padding: 12px 15px;
+                font-size: 14px;
+            }
+            .auxiliary-buttons label {
+                width: 100%;
+                text-align: center;
+            }
+            .results-container {
+                padding: 15px;
+            }
+            .result-heading {
+                font-size: 18px;
+            }
+            .result-table {
+                font-size: 12px;
+            }
+            .result-table th, .result-table td {
+                padding: 6px 4px;
+            }
+            .result-interpretation {
+                padding: 10px;
+                font-size: 14px;
+            }
+            .back-button, .print-button {
+                width: 80%;
+                max-width: 200px;
                 padding: 12px 20px;
+                font-size: 16px;
+            }
+            .diagnostic-content {
+                width: 95%;
+                max-height: 90%;
+                padding: 15px;
+            }
+            .diagnostic-heading {
+                font-size: 20px;
+            }
+            .statistics-table {
+                font-size: 12px;
+            }
+            .statistics-table th, .statistics-table td {
+                padding: 6px 4px;
+            }
+            .progress-bar-container {
+                height: 15px;
+            }
+            .progress-label {
+                font-size: 12px;
+            }
+            .chart-container {
+                height: 200px;
+            }
+        }
+        
+        /* 超小屏幕适配 */
+        @media (max-width: 400px) {
+            .response-button {
+                width: 90px;
+                height: 90px;
+                font-size: 16px;
+                margin: 0 8px;
+            }
+            .prompt-text {
+                font-size: 16px;
+            }
+            .result-table {
+                font-size: 11px;
+            }
+            .result-table th, .result-table td {
+                padding: 4px 2px;
             }
         }
         .print-button {
@@ -995,13 +1156,137 @@ function unlockAudioContext() {
         });
     }
     
+    // 解锁所有实际的音频元素（对 Safari/iOS 很重要）
     var allAudios = document.querySelectorAll('audio');
-    for (var i = 0; i < allAudios.length; i++) {
-        var audio = allAudios[i];
-        audio.load();
-    }
+    allAudios.forEach(function(audio) {
+        audio.muted = true;
+        var playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(function() {
+                audio.pause();
+                audio.currentTime = 0;
+                audio.muted = false;
+            }).catch(function() {
+                audio.muted = false;
+            });
+        }
+    });
     
-    logDebug("Preloaded " + allAudios.length + " audio files");
+    logDebug("Attempted to unlock " + allAudios.length + " audio files for Safari/iOS");
+}
+
+/**
+ * 延迟函数
+ * @param {number} ms - 延迟毫秒数
+ */
+function delay(ms) {
+    return new Promise(function(resolve) {
+        setTimeout(resolve, ms);
+    });
+}
+
+/**
+ * 等待音频缓冲完成（解决 Chrome 因缓冲不足导致的卡顿）
+ * @param {HTMLAudioElement} audio - 音频元素
+ * @param {number} timeout - 最大等待时间（毫秒）
+ */
+function waitForAudioReady(audio, timeout) {
+    return new Promise(function(resolve) {
+        timeout = timeout || 5000;
+        
+        // readyState >= 3 (HAVE_FUTURE_DATA) 表示有足够数据可以播放
+        if (audio.readyState >= 3) {
+            logDebug("Audio " + audio.id + " already buffered (readyState: " + audio.readyState + ")");
+            resolve();
+            return;
+        }
+        
+        logDebug("Audio " + audio.id + " waiting for buffer (readyState: " + audio.readyState + ")");
+        
+        var resolved = false;
+        
+        var onCanPlay = function() {
+            if (!resolved) {
+                resolved = true;
+                audio.removeEventListener('canplaythrough', onCanPlay);
+                logDebug("Audio " + audio.id + " buffered and ready");
+                resolve();
+            }
+        };
+        
+        // 监听 canplaythrough 事件
+        audio.addEventListener('canplaythrough', onCanPlay);
+        
+        // 超时保护 - 避免无限等待
+        setTimeout(function() {
+            if (!resolved) {
+                resolved = true;
+                audio.removeEventListener('canplaythrough', onCanPlay);
+                logDebug("Audio " + audio.id + " buffer timeout, proceeding anyway");
+                resolve();
+            }
+        }, timeout);
+        
+        // 尝试触发加载
+        if (audio.readyState === 0) {
+            audio.load();
+        }
+    });
+}
+
+/**
+ * 可靠的音频播放函数（带缓冲检查和超时保护）
+ * - 解决 Chrome 因缓冲不足导致的卡顿
+ * - 解决 Safari onended 事件不触发问题
+ * @param {HTMLAudioElement} audio - 音频元素
+ * @param {number} timeout - 超时时间（毫秒），默认基于音频时长 + 2秒
+ */
+function playAudioWithTimeout(audio, timeout) {
+    return new Promise(function(resolve, reject) {
+        // 首先等待音频缓冲完成
+        waitForAudioReady(audio, 3000).then(function() {
+            var resolved = false;
+            
+            // 计算超时时间：音频时长 + 2秒缓冲，最少3秒
+            var timeoutMs = timeout || Math.max(3000, (audio.duration || 1) * 1000 + 2000);
+            
+            var onEnd = function() {
+                if (!resolved) {
+                    resolved = true;
+                    audio.removeEventListener('ended', onEnd);
+                    logDebug("Audio " + audio.id + " ended normally");
+                    resolve();
+                }
+            };
+            
+            // 使用 addEventListener 替代 onended（更可靠）
+            audio.addEventListener('ended', onEnd);
+            
+            // 超时保护 - Safari 如果 ended 事件没触发
+            setTimeout(function() {
+                if (!resolved) {
+                    resolved = true;
+                    audio.removeEventListener('ended', onEnd);
+                    logDebug("Audio " + audio.id + " timeout, forcing next step");
+                    resolve();
+                }
+            }, timeoutMs);
+            
+            audio.currentTime = 0;
+            var playPromise = audio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(function(err) {
+                    if (!resolved) {
+                        resolved = true;
+                        audio.removeEventListener('ended', onEnd);
+                        logDebug("Audio " + audio.id + " play failed: " + err);
+                        reject(err);
+                    }
+                });
+            }
+        });
+    });
 }
 
 function resetPage() {
@@ -1217,7 +1502,7 @@ function clearButtonAnimations() {
     document.getElementById('secondBtn').classList.remove('button-playing');
 }
 
-function playABXSequence(xIsStandard) {
+async function playABXSequence(xIsStandard) {
     logDebug("Playing ABX sequence");
     
     clearButtonAnimations();
@@ -1245,87 +1530,51 @@ function playABXSequence(xIsStandard) {
     }
     
     var firstSound = standardIsFirst ? standardSound : comparisonSound;
-    document.getElementById('text1').value = "播放第一個音";
+    var secondSound = standardIsFirst ? comparisonSound : standardSound;
     
-    document.getElementById('firstBtn').classList.add('button-playing');
-    
-    firstSound.currentTime = 0;
-    var playPromise1 = firstSound.play();
-    
-    if (playPromise1 !== undefined) {
-        playPromise1.then(function() {
-            logDebug("First sound (A) played successfully");
-            
-            firstSound.onended = function() {
-                logDebug("First sound ended");
-                
-                document.getElementById('firstBtn').classList.remove('button-playing');
-                
-                setTimeout(function() {
-                    var secondSound = standardIsFirst ? comparisonSound : standardSound;
-                    document.getElementById('text1').value = "播放第二個音";
-                    
-                    document.getElementById('secondBtn').classList.add('button-playing');
-                    
-                    secondSound.currentTime = 0;
-                    var playPromise2 = secondSound.play();
-                    
-                    if (playPromise2 !== undefined) {
-                        playPromise2.then(function() {
-                            logDebug("Second sound (B) played successfully");
-                            
-                            secondSound.onended = function() {
-                                logDebug("Second sound ended");
-                                
-                                document.getElementById('secondBtn').classList.remove('button-playing');
-                                
-                                setTimeout(function() {
-                                    document.getElementById('text1').value = "播放第三個音";
-                                    
-                                    xSound.currentTime = 0;
-                                    var playPromise3 = xSound.play();
-                                    
-                                    if (playPromise3 !== undefined) {
-                                        playPromise3.then(function() {
-                                            logDebug("Third sound (X) played successfully");
-                                            
-                                            xSound.onended = function() {
-                                                logDebug("Third sound ended, enabling response buttons");
-                                                
-                                                stimulusEndTime = performance.now();
-                                                
-                                                document.getElementById('text1').value = "請作出選擇";
-                                                document.getElementById('promptText').style.visibility = 'visible';
-                                                
-                                                document.getElementById('firstBtn').disabled = false;
-                                                document.getElementById('secondBtn').disabled = false;
-                                                document.getElementById('firstBtn').style.background = "#66CCFF";
-                                                document.getElementById('secondBtn').style.background = "#66CCFF";
-                                            };
-                                        }).catch(function(error) {
-                                            logDebug("Failed to play third sound: " + error);
-                                            document.getElementById('text1').value = "音頻播放錯誤";
-                                            clearButtonAnimations();
-                                            setTimeout(showDiagnostics, 1000);
-                                        });
-                                    }
-                                }, 1000);
-                            };
-                        }).catch(function(error) {
-                            logDebug("Failed to play second sound: " + error);
-                            document.getElementById('text1').value = "音頻播放錯誤";
-                            clearButtonAnimations();
-                            setTimeout(showDiagnostics, 1000);
-                        });
-                    }
-                }, 1000);
-            };
-        }).catch(function(error) {
-            logDebug("Failed to play first sound: " + error);
-            document.getElementById('text1').value = "音頻播放錯誤，請刷新頁面";
-            clearButtonAnimations();
-            setTimeout(showDiagnostics, 1000);
-        });
+    try {
+        // 播放第一個音
+        document.getElementById('text1').value = "播放第一個音";
+        document.getElementById('firstBtn').classList.add('button-playing');
+        logDebug("Playing first sound (A)...");
+        await playAudioWithTimeout(firstSound);
+        document.getElementById('firstBtn').classList.remove('button-playing');
+        
+        // 間隔
+        await delay(1000);
+        
+        // 播放第二個音
+        document.getElementById('text1').value = "播放第二個音";
+        document.getElementById('secondBtn').classList.add('button-playing');
+        logDebug("Playing second sound (B)...");
+        await playAudioWithTimeout(secondSound);
+        document.getElementById('secondBtn').classList.remove('button-playing');
+        
+        // 間隔
+        await delay(1000);
+        
+        // 播放第三個音 (X)
+        document.getElementById('text1').value = "播放第三個音";
+        logDebug("Playing third sound (X)...");
+        await playAudioWithTimeout(xSound);
+        
+        // 啟用按鈕讓用戶選擇
+        logDebug("All sounds played, enabling response buttons");
+        stimulusEndTime = performance.now();
+        
+        document.getElementById('text1').value = "請作出選擇";
+        document.getElementById('promptText').style.visibility = 'visible';
+        
+        document.getElementById('firstBtn').disabled = false;
+        document.getElementById('secondBtn').disabled = false;
+        document.getElementById('firstBtn').style.background = "#66CCFF";
+        document.getElementById('secondBtn').style.background = "#66CCFF";
+        
+    } catch (error) {
+        logDebug("Audio playback error: " + error);
+        document.getElementById('text1').value = "音頻播放錯誤，請刷新頁面";
+        clearButtonAnimations();
+        setTimeout(showDiagnostics, 1000);
     }
 }
 
